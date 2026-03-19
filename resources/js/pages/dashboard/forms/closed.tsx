@@ -27,7 +27,7 @@ export default function Closed({ form }: Props) {
                         </p>
                         <div className="h-px bg-slate-100 mb-6"></div>
                         <p className="text-xs text-slate-400">
-                            Propulsé par <span className="font-semibold text-slate-500">STAT ENQUETE</span>
+                            Propulsé par <span className="font-semibold text-slate-500">STATS ENQUETES</span>
                         </p>
                     </div>
                 </div>

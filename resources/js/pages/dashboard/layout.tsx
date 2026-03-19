@@ -28,13 +28,13 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
         const currentPath = url.split('?')[0].replace(/\/$/, '');
         const cleanPath = path.replace(/\/$/, '');
 
-        // Routes exactes — ne doivent pas matcher leurs sous-routes
         const exactRoutes = [
             '/dashboard',
             '/enquetes',
             '/enquetes/create',
             '/reponses',
             '/modeles',
+            '/contacts',
             '/distributions',
             '/invitations',
             '/rapports',
@@ -80,7 +80,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                     </div>
 
                     {/* Nav */}
-                    <nav className="flex-1 overflow-y-auto py-4 px-3">
+                    <nav className="flex-1 overflow-y-auto py-4 px-3 scrollbar-none">
 
                         <div className="mb-6">
                             <NavLink href="/dashboard" icon={<HomeIcon />} active={isActive('/dashboard')}>
@@ -89,39 +89,43 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                         </div>
 
                         <NavSection title="Enquêtes">
-                            <NavLink href="/enquetes" icon={<FormIcon />} active={isActive('/enquetes')}>Mes enquêtes</NavLink>
+                            <NavLink href="/enquetes"        icon={<FormIcon />}       active={isActive('/enquetes')}>Mes enquêtes</NavLink>
                             <NavLink href="/enquetes/create" icon={<PlusCircleIcon />} active={isActive('/enquetes/create')}>Créer une enquête</NavLink>
-                            <NavLink href="/modeles" icon={<TemplateIcon />} active={isActive('/modeles')}>Modèles</NavLink>
+                            <NavLink href="/modeles"         icon={<TemplateIcon />}   active={isActive('/modeles')}>Modèles</NavLink>
                         </NavSection>
 
                         <NavSection title="Collecte">
-                            <NavLink href="/reponses" icon={<InboxIcon />} active={isActive('/reponses')}>Réponses</NavLink>
-                            <NavLink href="/distributions" icon={<ShareIcon />} active={isActive('/distributions')}>Distribution</NavLink>
-                            <NavLink href="/invitations" icon={<MailIcon />} active={isActive('/invitations')}>Invitations</NavLink>
+                            <NavLink href="/reponses"      icon={<InboxIcon />}   active={isActive('/reponses')}>Réponses</NavLink>
+                            <NavLink href="/contacts"      icon={<ContactIcon />} active={isActive('/contacts')}>Contacts</NavLink>
+                            <NavLink href="/invitations"   icon={<MailIcon />}   active={isActive('/invitations')}>Invitations</NavLink>
                         </NavSection>
 
                         <NavSection title="Analyse">
-                            <NavLink href="/rapports" icon={<ChartIcon />} active={isActive('/rapports')}>Rapports</NavLink>
-                            <NavLink href="/exports" icon={<ExportIcon />} active={isActive('/exports')}>Exports</NavLink>
+                            <NavLink href="/rapports" icon={<ChartIcon />}  active={isActive('/rapports')}>Rapports</NavLink>
+                            <NavLink href="/exports"  icon={<ExportIcon />} active={isActive('/exports')}>Exports</NavLink>
                         </NavSection>
 
                         <NavSection title="Paramètres">
-                            <NavLink href="/equipe" icon={<UsersGroupIcon />} active={isActive('/equipe')}>Équipe</NavLink>
+                            <NavLink href="/equipe"        icon={<UsersGroupIcon />} active={isActive('/equipe')}>Équipe</NavLink>
+                      
                         </NavSection>
                     </nav>
 
                     {/* User footer */}
                     {auth?.user && (
                         <div className="border-t border-white/5 p-3">
-                            <div className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+                            <Link href="/profile" className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white/5 transition-colors group">
                                 <div className="h-8 w-8 rounded-lg bg-[#2563eb] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                                     {getInitials(auth.user.name)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-semibold text-white truncate">{auth.user.name}</p>
+                                    <p className="text-xs font-semibold text-white truncate group-hover:text-blue-200 transition-colors">{auth.user.name}</p>
                                     <p className="text-xs text-slate-500 truncate">{auth.user.role ?? auth.user.email}</p>
                                 </div>
-                            </div>
+                                <svg className="w-3.5 h-3.5 text-slate-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </Link>
                         </div>
                     )}
                 </aside>
@@ -137,7 +141,8 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                         </div>
 
                         <div className="flex items-center gap-3">
-                            <Link href="/enquetes/create" className="hidden md:inline-flex items-center gap-2 bg-[#2563eb] text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-[#1d4ed8] transition-colors">
+                            <Link href="/enquetes/create"
+                                className="hidden md:inline-flex items-center gap-2 bg-[#2563eb] text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-[#1d4ed8] transition-colors">
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 5v14M5 12h14"/>
                                 </svg>
@@ -158,8 +163,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                                 <div className="relative">
                                     <button
                                         onClick={() => setShowUserMenu(!showUserMenu)}
-                                        className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 hover:border-blue-200 transition-all"
-                                    >
+                                        className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 hover:border-blue-200 transition-all">
                                         <div className="h-7 w-7 rounded-lg bg-[#2563eb] flex items-center justify-center text-white text-xs font-bold">
                                             {getInitials(auth.user.name)}
                                         </div>
@@ -185,16 +189,19 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                                                     </div>
                                                 </div>
                                                 <div className="p-2">
-                                                    <Link href="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-[#2563eb] transition-colors">
+                                                    <Link href="/profile" onClick={() => setShowUserMenu(false)}
+                                                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-[#2563eb] transition-colors">
                                                         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M20 21V19C20 16.7909 18.2091 15 16 15H8C5.79086 15 4 16.7909 4 19V21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="1.5"/></svg>
                                                         Mon profil
                                                     </Link>
-                                                    <Link href="/parametres" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-[#2563eb] transition-colors">
+                                                    <Link href="/parametres" onClick={() => setShowUserMenu(false)}
+                                                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-[#2563eb] transition-colors">
                                                         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" strokeWidth="1.5"/></svg>
                                                         Paramètres
                                                     </Link>
                                                     <div className="my-1 h-px bg-slate-100" />
-                                                    <button onClick={handleLogout} className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors">
+                                                    <button onClick={handleLogout}
+                                                        className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors">
                                                         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M16 17L21 12L16 7M21 12H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                                         Se déconnecter
                                                     </button>
@@ -226,10 +233,17 @@ function NavSection({ title, children }: { title: string; children: ReactNode })
     );
 }
 
-function NavLink({ href, icon, children, active = false }: { href: string; icon: ReactNode; children: ReactNode; active?: boolean }) {
+function NavLink({ href, icon, children, active = false }: {
+    href: string; icon: ReactNode; children: ReactNode; active?: boolean;
+}) {
     return (
         <li>
-            <Link href={href} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${active ? 'bg-[#2563eb] text-white font-semibold' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
+            <Link href={href}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
+                    active
+                        ? 'bg-[#2563eb] text-white font-semibold'
+                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                }`}>
                 <span className={active ? 'text-white' : 'text-slate-500'}>{icon}</span>
                 {children}
             </Link>
@@ -244,6 +258,7 @@ function FormIcon()       { return <svg className="h-4 w-4" viewBox="0 0 24 24" 
 function PlusCircleIcon() { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5"/><path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }
 function TemplateIcon()   { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M3 9h18M9 21V9" stroke="currentColor" strokeWidth="1.5"/></svg>; }
 function InboxIcon()      { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M22 12h-6l-2 3h-4l-2-3H2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>; }
+function ContactIcon()    { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.5"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }
 function ShareIcon()      { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="1.5"/><circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/><circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke="currentColor" strokeWidth="1.5"/></svg>; }
 function MailIcon()       { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" strokeWidth="1.5"/><path d="M22 6l-10 7L2 6" stroke="currentColor" strokeWidth="1.5"/></svg>; }
 function ChartIcon()      { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }

@@ -125,6 +125,163 @@ class TemplateController extends Controller
                     ['type' => 'textarea',     'properties' => ['label' => 'Votre message',         'required' => true,  'placeholder' => 'Décrivez votre demande en détail…', 'rows' => '5']],
                 ],
             ],
+
+            // ── Santé ──────────────────────────────────────────────────────
+            [
+                'id'          => 'sante',
+                'title'       => 'Satisfaction soins médicaux',
+                'description' => 'Évaluez la qualité des soins et l\'expérience patient dans votre établissement.',
+                'category'    => 'Santé',
+                'color'       => '#0ea5e9',
+                'icon'        => 'heart',
+                'questions'   => 8,
+                'questions_data' => [
+                    ['type' => 'block_title', 'properties' => ['title' => 'Votre expérience patient', 'subtitle' => 'Vos réponses nous aident à améliorer la qualité des soins', 'size' => 'h2']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Comment évaluez-vous l\'accueil à votre arrivée ?', 'required' => true, 'options' => 'Excellent, Très bien, Bien, Moyen, Insuffisant']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Le temps d\'attente était-il acceptable ?', 'required' => true, 'options' => 'Oui très raisonnable, Acceptable, Un peu long, Beaucoup trop long']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Comment évaluez-vous la qualité des soins reçus ?', 'required' => true, 'options' => 'Excellente, Très bonne, Bonne, Passable, Insuffisante']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Le personnel médical a-t-il bien répondu à vos questions ?', 'required' => false, 'options' => 'Tout à fait, En grande partie, Partiellement, Pas du tout']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Les informations sur votre traitement étaient-elles claires ?', 'required' => false, 'options' => 'Très claires, Claires, Peu claires, Incompréhensibles']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Comment notez-vous la propreté des locaux ?', 'required' => false, 'options' => 'Excellente, Bonne, Correcte, Insuffisante']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Recommanderiez-vous notre établissement ?', 'required' => false, 'options' => 'Oui certainement, Probablement, Probablement pas, Non']],
+                ],
+            ],
+
+            // ── Éducation ─────────────────────────────────────────────────
+            [
+                'id'          => 'ecole',
+                'title'       => 'Satisfaction école / université',
+                'description' => 'Mesurez la satisfaction des étudiants ou parents vis-à-vis de l\'établissement.',
+                'category'    => 'Éducation',
+                'color'       => '#8b5cf6',
+                'icon'        => 'graduation',
+                'questions'   => 7,
+                'questions_data' => [
+                    ['type' => 'block_title', 'properties' => ['title' => 'Satisfaction scolaire', 'subtitle' => 'Partagez votre expérience avec notre établissement', 'size' => 'h2']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Comment évaluez-vous la qualité de l\'enseignement ?', 'required' => true, 'options' => 'Excellente, Très bonne, Bonne, Passable, Insuffisante']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Les enseignants sont-ils disponibles et à l\'écoute ?', 'required' => true, 'options' => 'Toujours, Souvent, Parfois, Rarement']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Les infrastructures sont-elles adaptées ?', 'required' => false, 'options' => 'Très bien, Bien, Correctes, Insuffisantes']],
+                    ['type' => 'radio',       'properties' => ['label' => 'La communication de l\'administration est-elle satisfaisante ?', 'required' => false, 'options' => 'Excellente, Bonne, Correcte, À améliorer']],
+                    ['type' => 'dropdown',    'properties' => ['label' => 'Votre niveau d\'études', 'required' => false, 'options' => 'Primaire, Collège, Lycée, Licence, Master, Doctorat, Autre', 'placeholder' => 'Sélectionnez…']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Recommanderiez-vous cet établissement ?', 'required' => false, 'options' => 'Oui certainement, Probablement, Probablement pas, Non']],
+                ],
+            ],
+
+            // ── Restaurant ────────────────────────────────────────────────
+            [
+                'id'          => 'restaurant',
+                'title'       => 'Expérience restaurant',
+                'description' => 'Recueillez l\'avis de vos clients sur leur expérience culinaire.',
+                'category'    => 'Restauration',
+                'color'       => '#f97316',
+                'icon'        => 'utensils',
+                'questions'   => 6,
+                'questions_data' => [
+                    ['type' => 'block_title', 'properties' => ['title' => 'Votre expérience chez nous', 'subtitle' => 'Merci de nous donner votre avis', 'size' => 'h2']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Comment évaluez-vous la qualité des plats ?', 'required' => true, 'options' => 'Excellente, Très bonne, Bonne, Moyenne, Décevante']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Comment évaluez-vous le service ?', 'required' => true, 'options' => 'Excellent, Très bien, Bien, Moyen, Mauvais']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Le rapport qualité/prix vous semble-t-il justifié ?', 'required' => true, 'options' => 'Tout à fait, Plutôt oui, Neutre, Plutôt non, Non']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Comment était l\'ambiance et le cadre ?', 'required' => false, 'options' => 'Excellent, Agréable, Correct, Bruyant, Décevant']],
+                    ['type' => 'textarea',    'properties' => ['label' => 'Des commentaires ou suggestions ?', 'required' => false, 'placeholder' => 'Dites-nous tout…', 'rows' => '3']],
+                ],
+            ],
+
+            // ── Hôtel ─────────────────────────────────────────────────────
+            [
+                'id'          => 'hotel',
+                'title'       => 'Satisfaction hôtelière',
+                'description' => 'Évaluez l\'expérience de vos clients pendant leur séjour.',
+                'category'    => 'Hôtellerie',
+                'color'       => '#14b8a6',
+                'icon'        => 'building',
+                'questions'   => 8,
+                'questions_data' => [
+                    ['type' => 'block_title', 'properties' => ['title' => 'Votre séjour', 'subtitle' => 'Partagez votre expérience pour nous aider à nous améliorer', 'size' => 'h2']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Comment évaluez-vous votre chambre ?', 'required' => true, 'options' => 'Excellente, Très bien, Bien, Correcte, Décevante']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Comment était la propreté de l\'hôtel ?', 'required' => true, 'options' => 'Impeccable, Très propre, Propre, Correcte, Insuffisante']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Comment évaluez-vous l\'accueil à la réception ?', 'required' => true, 'options' => 'Excellent, Très bien, Bien, Moyen, Mauvais']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Le petit-déjeuner était-il satisfaisant ?', 'required' => false, 'options' => 'Excellent, Très bien, Bien, Moyen, Décevant, Non pris']],
+                    ['type' => 'dropdown',    'properties' => ['label' => 'Motif de votre séjour', 'required' => false, 'options' => 'Tourisme, Affaires, Événement familial, Transit, Autre', 'placeholder' => 'Choisissez…']],
+                    ['type' => 'textarea',    'properties' => ['label' => 'Ce que nous pourrions améliorer', 'required' => false, 'placeholder' => 'Vos suggestions…', 'rows' => '2']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Recommanderiez-vous notre hôtel ?', 'required' => false, 'options' => 'Oui certainement, Probablement, Probablement pas, Non']],
+                ],
+            ],
+
+            // ── E-commerce ────────────────────────────────────────────────
+            [
+                'id'          => 'ecommerce',
+                'title'       => 'Expérience d\'achat en ligne',
+                'description' => 'Mesurez la satisfaction de vos clients après un achat sur votre boutique en ligne.',
+                'category'    => 'E-commerce',
+                'color'       => '#22c55e',
+                'icon'        => 'cart',
+                'questions'   => 7,
+                'questions_data' => [
+                    ['type' => 'block_title', 'properties' => ['title' => 'Votre expérience d\'achat', 'subtitle' => 'Aidez-nous à améliorer votre expérience', 'size' => 'h2']],
+                    ['type' => 'radio',       'properties' => ['label' => 'La navigation sur notre site était-elle facile ?', 'required' => true, 'options' => 'Très facile, Facile, Correcte, Difficile, Très difficile']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Le produit reçu correspond-il à vos attentes ?', 'required' => true, 'options' => 'Tout à fait, En grande partie, Partiellement, Pas du tout']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Êtes-vous satisfait du délai de livraison ?', 'required' => false, 'options' => 'Très satisfait, Satisfait, Neutre, Insatisfait, Très insatisfait']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Comment évaluez-vous l\'emballage et la présentation ?', 'required' => false, 'options' => 'Excellent, Bien, Correct, Décevant']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Avez-vous contacté le service client ?', 'required' => false, 'options' => 'Non, Oui et j\'ai été satisfait, Oui mais insatisfait']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Recommanderiez-vous notre boutique ?', 'required' => false, 'options' => 'Oui certainement, Probablement, Probablement pas, Non']],
+                ],
+            ],
+
+            // ── NPS ───────────────────────────────────────────────────────
+            [
+                'id'          => 'nps',
+                'title'       => 'Net Promoter Score (NPS)',
+                'description' => 'Mesurez la fidélité et la propension de vos clients à recommander votre marque.',
+                'category'    => 'Business',
+                'color'       => '#3b82f6',
+                'icon'        => 'chart',
+                'questions'   => 3,
+                'questions_data' => [
+                    ['type' => 'block_title', 'properties' => ['title' => 'Nous avons besoin de votre avis', 'subtitle' => 'Cela ne prend que 2 minutes', 'size' => 'h2']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Sur une échelle de 0 à 10, recommanderiez-vous notre entreprise à un ami ?', 'required' => true, 'options' => '0 - Très peu probable, 1, 2, 3, 4, 5 - Neutre, 6, 7, 8, 9, 10 - Très probable']],
+                    ['type' => 'textarea',    'properties' => ['label' => 'Qu\'est-ce qui a le plus influencé votre note ?', 'required' => false, 'placeholder' => 'Expliquez votre choix…', 'rows' => '4']],
+                ],
+            ],
+
+            // ── Recrutement ───────────────────────────────────────────────
+            [
+                'id'          => 'recrutement',
+                'title'       => 'Expérience candidat',
+                'description' => 'Évaluez votre processus de recrutement du point de vue des candidats.',
+                'category'    => 'Ressources humaines',
+                'color'       => '#f59e0b',
+                'icon'        => 'briefcase',
+                'questions'   => 7,
+                'questions_data' => [
+                    ['type' => 'block_title', 'properties' => ['title' => 'Votre expérience de candidature', 'subtitle' => 'Vos retours nous aident à améliorer notre processus de recrutement', 'size' => 'h2']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Comment avez-vous trouvé le processus de candidature ?', 'required' => true, 'options' => 'Très simple, Simple, Correct, Complexe, Très complexe']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Les informations sur le poste étaient-elles claires ?', 'required' => true, 'options' => 'Très claires, Claires, Partiellement, Peu claires']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Comment évaluez-vous les délais de réponse ?', 'required' => false, 'options' => 'Très rapides, Rapides, Acceptables, Lents, Très lents']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Les recruteurs étaient-ils professionnels ?', 'required' => false, 'options' => 'Tout à fait, Plutôt oui, Neutre, Plutôt non']],
+                    ['type' => 'textarea',    'properties' => ['label' => 'Qu\'est-ce qui pourrait être amélioré dans notre processus ?', 'required' => false, 'placeholder' => 'Vos suggestions…', 'rows' => '3']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Recommanderiez-vous notre entreprise comme employeur ?', 'required' => false, 'options' => 'Oui certainement, Probablement, Probablement pas, Non']],
+                ],
+            ],
+
+            // ── Onboarding ────────────────────────────────────────────────
+            [
+                'id'          => 'onboarding',
+                'title'       => 'Évaluation onboarding',
+                'description' => 'Mesurez la qualité de l\'intégration des nouveaux employés.',
+                'category'    => 'Ressources humaines',
+                'color'       => '#10b981',
+                'icon'        => 'rocket',
+                'questions'   => 7,
+                'questions_data' => [
+                    ['type' => 'block_title', 'properties' => ['title' => 'Votre parcours d\'intégration', 'subtitle' => 'Aidez-nous à améliorer l\'expérience des nouveaux arrivants', 'size' => 'h2']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Comment évaluez-vous votre intégration globale ?', 'required' => true, 'options' => 'Excellente, Très bonne, Bonne, Passable, Mauvaise']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Avez-vous reçu toutes les informations nécessaires dès le départ ?', 'required' => true, 'options' => 'Oui toutes, La plupart, Partiellement, Très peu']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Votre manager était-il disponible pour vous accompagner ?', 'required' => false, 'options' => 'Toujours, Souvent, Parfois, Rarement']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Les outils et accès vous ont-ils été fournis rapidement ?', 'required' => false, 'options' => 'Oui immédiatement, Dans les délais, Avec un peu de retard, Tardivement']],
+                    ['type' => 'dropdown',    'properties' => ['label' => 'Durée depuis votre arrivée', 'required' => false, 'options' => 'Moins d\'une semaine, 1 à 2 semaines, 1 mois, Plus d\'un mois', 'placeholder' => 'Choisissez…']],
+                    ['type' => 'radio',       'properties' => ['label' => 'Vous sentez-vous à l\'aise dans votre nouveau rôle ?', 'required' => false, 'options' => 'Tout à fait, Plutôt oui, En cours d\'adaptation, Pas encore']],
+                ],
+            ],
         ];
     }
 

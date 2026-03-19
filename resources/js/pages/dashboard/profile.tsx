@@ -70,7 +70,7 @@ export default function Profile({ user, success, success_password }: Props) {
 
     return (
         <DashboardLayout title="Mon profil" subtitle="Gérez vos informations personnelles et paramètres de sécurité">
-            <Head title="Profil — STAT ENQUETE" />
+            <Head title="Profil — STATS ENQUETES" />
 
             {/* ── Flash succès ────────────────────────────────────────────── */}
             {success && (

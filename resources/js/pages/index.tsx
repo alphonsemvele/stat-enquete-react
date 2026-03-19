@@ -27,7 +27,7 @@ export default function Welcome() {
 
     return (
         <>
-            <Head title="STAT ENQUETE — Enquêtes intelligentes" />
+            <Head title="STATS ENQUETES — Enquêtes intelligentes" />
 
             <div className="min-h-screen bg-white text-[#0f172a]">
 
@@ -40,7 +40,7 @@ export default function Welcome() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                                 </svg>
                             </div>
-                            <span className="font-bold text-[#0f172a] text-lg tracking-tight">STAT ENQUETE</span>
+                            <span className="font-bold text-[#0f172a] text-lg tracking-tight">STATS ENQUETES</span>
                         </div>
                         <div className="hidden md:flex items-center gap-8">
                             {[['Fonctionnalités', '#features'], ['Modèles', '#modeles'], ['Tarifs', '#tarifs'], ['Démo', '#demo']].map(([label, href]) => (
@@ -121,7 +121,7 @@ export default function Welcome() {
                                 </h2>
                             </div>
                             <p className="text-slate-500 max-w-xs leading-relaxed text-base">
-                                De la création à l'analyse, STAT ENQUETE couvre chaque étape avec précision.
+                                De la création à l'analyse, STATS ENQUETES couvre chaque étape avec précision.
                             </p>
                         </div>
                         <div className="grid lg:grid-cols-2 gap-0">
@@ -205,7 +205,7 @@ export default function Welcome() {
                             <div>
                                 <p className="text-xs font-bold uppercase tracking-widest text-[#2563eb] mb-4">Accès gratuit immédiat</p>
                                 <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#0f172a] leading-tight mb-6">
-                                    Testez STAT ENQUETE<br />sans engagement
+                                    Testez STATS ENQUETES<br />sans engagement
                                 </h2>
                                 <p className="text-slate-500 leading-relaxed text-base mb-8">
                                     Explorez la plateforme complète avec des données de démonstration. Aucune carte bancaire requise.
@@ -277,7 +277,7 @@ export default function Welcome() {
                         </div>
                         <div className="grid md:grid-cols-3 gap-6">
                             {[
-                                { name: 'Dr. Aminata Diallo', role: 'Chercheuse, UAC Bénin', quote: 'STAT ENQUETE a transformé notre collecte terrain. L\'IA donne des insights en temps réel impossibles à obtenir manuellement.', init: 'AD', color: 'bg-blue-500' },
+                                { name: 'Dr. Aminata Diallo', role: 'Chercheuse, UAC Bénin', quote: 'STATS ENQUETES a transformé notre collecte terrain. L\'IA donne des insights en temps réel impossibles à obtenir manuellement.', init: 'AD', color: 'bg-blue-500' },
                                 { name: 'Marc-Antoine Essomba', role: 'DRH, Groupe Cebar', quote: '87% de taux de réponse sur nos enquêtes internes. Nos équipes adorent l\'interface. C\'est devenu un outil central.', init: 'ME', color: 'bg-indigo-500' },
                                 { name: 'Fatoumata Kouyaté', role: 'Marketing, Orange CI', quote: 'On économise des heures de reporting chaque semaine. Les exports automatiques et les dashboards live sont vraiment impressionnants.', init: 'FK', color: 'bg-sky-500' },
                             ].map((t, i) => (
@@ -356,7 +356,7 @@ export default function Welcome() {
                                 { q: 'Combien de temps pour créer ma première enquête ?', a: 'Moins de 5 minutes avec nos modèles. Choisissez, personnalisez, partagez.' },
                                 { q: 'Mes données sont-elles sécurisées ?', a: 'Chiffrement AES-256, serveurs certifiés ISO 27001, conformité RGPD complète. Vos données ne sont jamais revendues.' },
                                 { q: 'L\'analyse IA supporte quelles langues ?', a: 'Français, anglais, espagnol, arabe et portugais. D\'autres langues sont en cours d\'intégration.' },
-                                { q: 'Puis-je intégrer STAT ENQUETE à mes outils ?', a: 'Oui via notre API REST ou nos intégrations natives Zapier, Google Sheets, Notion, Slack et HubSpot.' },
+                                { q: 'Puis-je intégrer STATS ENQUETES à mes outils ?', a: 'Oui via notre API REST ou nos intégrations natives Zapier, Google Sheets, Notion, Slack et HubSpot.' },
                                 { q: 'Que se passe-t-il après la période d\'essai ?', a: 'Passage automatique en version Gratuite. Aucun prélèvement sans votre accord. Vous conservez vos données.' },
                             ].map((faq, i) => (
                                 <div key={i} className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
@@ -406,7 +406,7 @@ export default function Welcome() {
                                     <div className="w-8 h-8 bg-[#2563eb] rounded-lg flex items-center justify-center">
                                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                                     </div>
-                                    <span className="font-bold text-[#0f172a] text-lg">STAT ENQUETE</span>
+                                    <span className="font-bold text-[#0f172a] text-lg">STATS ENQUETES</span>
                                 </div>
                                 <p className="text-sm text-slate-400 max-w-xs leading-relaxed">La plateforme d'enquête moderne pour collecter, analyser et agir sur vos données.</p>
                             </div>
@@ -423,7 +423,7 @@ export default function Welcome() {
                             ))}
                         </div>
                         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8 text-sm text-slate-400">
-                            <p>© 2025 STAT ENQUETE. Tous droits réservés.</p>
+                            <p>© 2025 STATS ENQUETES. Tous droits réservés.</p>
                             <div className="flex gap-6">
                                 {['Confidentialité', 'CGU', 'Cookies'].map(l => (<a key={l} href="#" className="hover:text-[#2563eb] transition-colors">{l}</a>))}
                             </div>

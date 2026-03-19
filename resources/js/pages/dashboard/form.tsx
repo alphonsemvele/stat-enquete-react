@@ -146,7 +146,7 @@ export default function FormsIndex({ forms, stats, filters = {} }: Props) {
 
     return (
         <DashboardLayout title="Mes enquêtes" subtitle="Gérez et suivez toutes vos enquêtes">
-            <Head title="Enquêtes — STAT ENQUETE" />
+            <Head title="Enquêtes — STATS ENQUETES" />
 
             {/* ── Header actions ─────────────────────────────────────────── */}
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

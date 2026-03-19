@@ -126,7 +126,7 @@ export default function PublicForm({ form, questions }: Props) {
 
                     {/* Footer */}
                     <p className="text-center text-xs text-slate-400 mt-6">
-                        Propulsé par <span className="font-semibold text-slate-500">STAT ENQUETE</span>
+                        Propulsé par <span className="font-semibold text-slate-500">STATS ENQUETES</span>
                     </p>
                 </div>
             </div>

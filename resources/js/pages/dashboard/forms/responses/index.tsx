@@ -73,7 +73,7 @@ export default function ResponsesIndex({ responses, forms, stats, filters = {} }
 
     return (
         <DashboardLayout title="Réponses" subtitle="Toutes les réponses collectées">
-            <Head title="Réponses — STAT ENQUETE" />
+            <Head title="Réponses — STATS ENQUETES" />
 
             {/* ── Stats ──────────────────────────────────────────────────── */}
             <div className="grid gap-4 sm:grid-cols-4 mb-6">

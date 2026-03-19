@@ -193,7 +193,7 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
     // ─────────────────────────────────────────────────────────────────────────
     return (
         <DashboardLayout title="" subtitle="">
-            <Head title={`${title} — STAT ENQUETE`} />
+            <Head title={`${title} — STATS ENQUETES`} />
 
             {/* ── TOPBAR ─────────────────────────────────────────────────── */}
             <div className="flex items-center justify-between gap-4 mb-5 bg-white rounded-2xl border border-slate-100 px-5 py-3.5">
