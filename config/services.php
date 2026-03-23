@@ -34,5 +34,10 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'mailtrap' => [
+    'token'      => env('MAILTRAP_TOKEN'),
+    'from_email' => env('MAILTRAP_FROM_EMAIL', 'hello@demomailtrap.co'),
+    'from_name'  => env('MAILTRAP_FROM_NAME', 'Stat Enquête'),
+],
 
 ];

@@ -2,200 +2,199 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\InvitationMail;
-use App\Models\Contact;
+use App\Mail\notifMail;
 use App\Models\Form;
+use App\Models\Contact;
 use App\Models\Invitation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
-use Inertia\Response;
 
 class InvitationController extends Controller
 {
-    // ─── Liste des invitations ────────────────────────────────────────────────
-
-    public function index(Request $request): Response
+    // ── GET /invitations ─────────────────────────────────────────────────────
+    public function index(Request $request)
     {
-        $userId  = Auth::id();
-        $formId  = $request->input('form_id', '');
-        // Passer le form_id aux filtres pour pré-sélection dans le modal
-        $statut  = $request->input('statut', '');
-        $search  = $request->input('search', '');
+        $userId = Auth::id();
 
-        $query = Invitation::where('user_id', $userId)
-            ->with('form:id,title,color,reference')
-            ->orderByDesc('created_at');
+        $query = Invitation::with(['form', 'contact'])
+            ->whereHas('form', fn ($q) => $q->where('user_id', $userId))
+            ->latest();
 
-        if ($formId)  $query->where('form_id', $formId);
-        if ($statut)  $query->where('statut', $statut);
-        if ($search)  $query->where(fn ($q) =>
-            $q->where('email', 'like', "%{$search}%")
-              ->orWhere('nom',  'like', "%{$search}%")
-        );
+        if ($request->filled('form_id')) {
+            $query->where('form_id', $request->form_id);
+        }
+        if ($request->filled('statut')) {
+            $query->where('statut', $request->statut);
+        }
+        if ($request->filled('search')) {
+            $query->whereHas('contact', fn ($q) =>
+                $q->where('nom',   'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%')
+            );
+        }
 
-        $invitations = $query->paginate(20)->through(fn (Invitation $inv) => [
+        $invitations = $query->paginate(15)->through(fn ($inv) => [
             'id'          => $inv->id,
-            'nom'         => $inv->nom ?? 'Inconnu',
-            'email'       => $inv->email,
-            'initials'    => $this->initials($inv->nom ?? $inv->email),
-            'form_title'  => $inv->form?->title  ?? '—',
-            'form_color'  => $inv->form?->color  ?? '#2563eb',
+            'contact_nom' => $inv->contact->nom,
+            'email'       => $inv->contact->email,
+            'form_titre'  => $inv->form->title,
+            'form_id'     => $inv->form_id,
             'statut'      => $inv->statut,
             'envoye_le'   => $inv->envoye_le?->format('d/m/Y H:i'),
-            'ouvert_le'   => $inv->ouvert_le?->format('d/m/Y H:i'),
-            'repondu_le'  => $inv->repondu_le?->format('d/m/Y H:i'),
-            'created_at'  => $inv->created_at->format('d/m/Y'),
+            'token'       => $inv->token,
         ]);
 
-        // Stats
-        $stats = [
-            'total'      => Invitation::where('user_id', $userId)->count(),
-            'envoyees'   => Invitation::where('user_id', $userId)->where('statut', 'envoyee')->count(),
-            'ouvertes'   => Invitation::where('user_id', $userId)->where('statut', 'ouverte')->count(),
-            'repondues'  => Invitation::where('user_id', $userId)->where('statut', 'repondue')->count(),
-        ];
-
-        // Enquêtes pour le filtre
         $forms = Form::where('user_id', $userId)
             ->where('is_published', true)
-            ->select('id', 'title', 'color')
-            ->orderBy('title')
+            ->select('id', 'title')
             ->get();
 
         return Inertia::render('dashboard/invitations', [
             'invitations' => $invitations,
-            'stats'       => $stats,
             'forms'       => $forms,
-            'filters'     => [
-                'form_id' => $formId,
-                'statut'  => $statut,
-                'search'  => $search,
-            ],
+            'filters'     => $request->only(['form_id', 'statut', 'search']),
         ]);
     }
 
-    // ─── Envoyer des invitations ──────────────────────────────────────────────
-
+    // ── POST /invitations ────────────────────────────────────────────────────
     public function store(Request $request)
     {
         $request->validate([
-            'form_id'     => ['required', 'exists:forms,id'],
-            'contact_ids' => ['required', 'array', 'min:1'],
+            'form_id'       => ['required', 'exists:forms,id'],
+            'contact_ids'   => ['required', 'array', 'min:1'],
             'contact_ids.*' => ['exists:contacts,id'],
-            'message'     => ['nullable', 'string', 'max:500'],
-        ], [
-            'form_id.required'      => 'Choisissez une enquête.',
-            'contact_ids.required'  => 'Sélectionnez au moins un contact.',
-            'contact_ids.min'       => 'Sélectionnez au moins un contact.',
+            'message'       => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $userId  = Auth::id();
-        $form    = Form::findOrFail($request->form_id);
-        $contacts = Contact::where('user_id', $userId)
-            ->whereIn('id', $request->contact_ids)
-            ->get();
+        $form = Form::where('id', $request->form_id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
-        $sent    = 0;
-        $skipped = 0;
+        $contacts = Contact::whereIn('id', $request->contact_ids)->get();
+
+        $messagePersonnalise = $request->message
+            ?? "Nous vous invitons à prendre quelques minutes pour répondre à notre enquête. Votre avis est précieux !";
+
+        $sent   = 0;
+        $errors = [];
 
         foreach ($contacts as $contact) {
-            // Éviter de renvoyer si invitation déjà en attente ou envoyée
-            $exists = Invitation::where('form_id', $form->id)
-                ->where('email', $contact->email)
-                ->whereIn('statut', ['en_attente', 'envoyee', 'ouverte'])
-                ->exists();
 
-            if ($exists) { $skipped++; continue; }
+            $invitation = Invitation::firstOrCreate(
+                [
+                    'form_id'    => $form->id,
+                    'contact_id' => $contact->id,
+                ],
+                [
+                    'user_id'              => Auth::id(),
+                    'email'                => $contact->email,
+                    'nom'                  => $contact->nom,
+                    'token'                => Str::uuid(),
+                    'statut'               => 'en_attente',
+                    'message_personnalise' => $messagePersonnalise,
+                ]
+            );
 
-            $token = Str::random(64);
+            if ($invitation->statut === 'repondue') {
+                $errors[] = $contact->email . ' : déjà répondu';
+                continue;
+            }
 
-            $invitation = Invitation::create([
-                'user_id'              => $userId,
-                'form_id'              => $form->id,
-                'contact_id'           => $contact->id,
-                'email'                => $contact->email,
-                'nom'                  => $contact->nom,
-                'token'                => $token,
-                'statut'               => 'envoyee',
-                'envoye_le'            => now(),
-                'message_personnalise' => $request->message,
-            ]);
+            $lienReponse = url('/f/' . $form->reference);
 
-            $lien = url("/f/{$form->reference}?inv={$token}");
+            $htmlContent = view('emails.invitation', [
+                'contactNom'          => $contact->nom,
+                'formTitle'           => $form->title,
+                'lienReponse'         => $lienReponse,
+                'messagePersonnalise' => $messagePersonnalise,
+                'expediteurNom'       => Auth::user()->name,
+            ])->render();
 
             try {
-                Mail::to($contact->email, $contact->nom)->send(new InvitationMail($invitation, $lien));
+                Mail::to($contact->email, $contact->nom)
+                    ->send(new notifMail(
+                        subject: "Invitation à l'enquête : {$form->title}",
+                        content: $htmlContent,
+                    ));
+
+                // Statut mis à jour immédiatement — l'envoi réel se fait en arrière-plan
+                $invitation->update([
+                    'statut'    => 'envoyee',
+                    'envoye_le' => now(),
+                ]);
                 $sent++;
-            } catch (\Throwable $e) {
-                // Marquer comme en_attente si l'envoi échoue
-                $invitation->update(['statut' => 'en_attente', 'envoye_le' => null]);
+
+            } catch (\Exception $e) {
+                Log::error('Invitation mail failed', ['to' => $contact->email, 'error' => $e->getMessage()]);
+                $errors[] = $contact->email . ' : ' . $e->getMessage();
             }
         }
 
-        $msg = "{$sent} invitation(s) envoyée(s)";
-        if ($skipped) $msg .= ", {$skipped} ignorée(s) (déjà invité(s))";
+        if ($sent === 0) {
+            return back()->with('error', 'Aucun email envoyé. Erreurs : ' . implode(', ', $errors));
+        }
 
-        return back()->with('success', $msg . '.');
+        $msg = "{$sent} invitation(s) envoyée(s) avec succès.";
+        if ($errors) {
+            $msg .= ' Échecs : ' . implode(', ', $errors);
+        }
+
+        return back()->with('success', $msg);
     }
 
-    // ─── Relancer une invitation ──────────────────────────────────────────────
-
+    // ── POST /invitations/{invitation}/relancer ───────────────────────────────
     public function relancer(Invitation $invitation)
     {
-        if ($invitation->user_id !== Auth::id()) abort(403);
+        abort_if($invitation->form->user_id !== Auth::id(), 403);
+
         if ($invitation->statut === 'repondue') {
-            return back()->withErrors(['relance' => 'Ce contact a déjà répondu.']);
+            return back()->with('error', 'Cette invitation a déjà été répondue.');
         }
 
-        $lien = url("/f/{$invitation->form->reference}?inv={$invitation->token}");
+        $form    = $invitation->form;
+        $contact = $invitation->contact;
+
+        $lienReponse = url('/f/' . $form->reference);
+
+        $htmlContent = view('emails.invitation', [
+            'contactNom'          => $contact->nom,
+            'formTitle'           => $form->title,
+            'lienReponse'         => $lienReponse,
+            'messagePersonnalise' => "Nous vous rappelons que votre réponse à notre enquête est toujours attendue. Merci de prendre quelques minutes pour y répondre !",
+            'expediteurNom'       => Auth::user()->name,
+        ])->render();
 
         try {
-            Mail::to($invitation->email, $invitation->nom)->send(new InvitationMail($invitation, $lien));
-            $invitation->update(['statut' => 'envoyee', 'envoye_le' => now()]);
-            return back()->with('success', "Invitation relancée à {$invitation->email}.");
-        } catch (\Throwable $e) {
-            return back()->withErrors(['relance' => "Erreur lors de l'envoi : " . $e->getMessage()]);
+            Mail::to($contact->email, $contact->nom)
+                ->send(new notifMail(
+                    subject: "[Rappel] Enquête : {$form->title}",
+                    content: $htmlContent,
+                ));
+
+            $invitation->update([
+                'statut'    => 'envoyee',
+                'envoye_le' => now(),
+            ]);
+
+            return back()->with('success', 'Relance envoyée à ' . $contact->email);
+
+        } catch (\Exception $e) {
+            Log::error('Relance mail failed', ['to' => $contact->email, 'error' => $e->getMessage()]);
+            return back()->with('error', 'Échec de la relance : ' . $e->getMessage());
         }
     }
 
-    // ─── Supprimer une invitation ─────────────────────────────────────────────
-
+    // ── DELETE /invitations/{invitation} ─────────────────────────────────────
     public function destroy(Invitation $invitation)
     {
-        if ($invitation->user_id !== Auth::id()) abort(403);
+        abort_if($invitation->form->user_id !== Auth::id(), 403);
+
         $invitation->delete();
+
         return back()->with('success', 'Invitation supprimée.');
-    }
-
-    // ─── Tracking : marquer comme ouverte ────────────────────────────────────
-    // Appelé quand le répondant clique sur le lien /f/{ref}?inv={token}
-
-    public static function trackOpen(string $token): void
-    {
-        $inv = Invitation::where('token', $token)->where('statut', 'envoyee')->first();
-        if ($inv) $inv->update(['statut' => 'ouverte', 'ouvert_le' => now()]);
-    }
-
-    // ─── Tracking : marquer comme répondue ───────────────────────────────────
-    // Appelé depuis FormResponseController@submit
-
-    public static function trackReponse(string $token): void
-    {
-        $inv = Invitation::where('token', $token)
-            ->whereIn('statut', ['envoyee', 'ouverte'])
-            ->first();
-        if ($inv) $inv->update(['statut' => 'repondue', 'repondu_le' => now()]);
-    }
-
-    // ─── Helper ───────────────────────────────────────────────────────────────
-
-    private function initials(string $str): string
-    {
-        return collect(explode(' ', $str))
-            ->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))
-            ->take(2)->implode('');
     }
 }
