@@ -5,6 +5,7 @@ import DashboardLayout from '../../dashboard/layout';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type FieldSize = 'h1' | 'h2' | 'h3';
+type MobileTab = 'questions' | 'editor' | 'properties';
 
 interface QProps {
     label?: string; placeholder?: string; required?: boolean;
@@ -76,7 +77,7 @@ function TypeIcon({ type, cls = 'w-3.5 h-3.5' }: { type: string; cls?: string })
         case 'dropdown':     return <svg {...p}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>;
         case 'radio':        return <svg {...p}><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth={2}/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>;
         case 'checkbox':     return <svg {...p}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>;
-        case 'date_picker':  return <svg {...p}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>;
+        case 'date_picker':  return <svg {...p}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2v12a2 2 0 002 2z"/></svg>;
         case 'file_upload':  return <svg {...p}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>;
         case 'block_title':  return <svg {...p}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h10"/></svg>;
         default:             return <svg {...p}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8"/></svg>;
@@ -98,6 +99,8 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
     const [flash,       setFlash]       = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
     const [showPalette, setShowPalette] = useState(false);
     const [paletteQ,    setPaletteQ]    = useState('');
+    // Onglet mobile actif
+    const [mobileTab,   setMobileTab]   = useState<MobileTab>('questions');
 
     const titleRef   = useRef<HTMLInputElement>(null);
     const paletteRef = useRef<HTMLDivElement>(null);
@@ -120,15 +123,18 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
     const ok  = (msg: string) => setFlash({ type: 'ok',  msg });
     const err = (msg: string) => setFlash({ type: 'err', msg });
 
-    // ── CRUD ──────────────────────────────────────────────────────────────────
+    // ── CRUD ─────────────────────────────────────────────────────────────────
     const add = (type: string) => {
         const comp = ALL_COMPONENTS.find(c => c.type === type);
         if (!comp) return;
         const updated = [...questions, { type, properties: { ...comp.props } }];
         setQuestions(updated);
-        setSelIdx(updated.length - 1);
+        const newIdx = updated.length - 1;
+        setSelIdx(newIdx);
         setShowPalette(false);
         setPaletteQ('');
+        // Sur mobile, basculer sur l'onglet éditeur après l'ajout
+        setMobileTab('editor');
     };
 
     const remove = (i: number) => {
@@ -158,6 +164,12 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
         setQuestions(q => q.map((x, idx) =>
             idx === i ? { ...x, properties: { ...x.properties, [key]: val } } : x
         ));
+
+    // Sélection + bascule automatique vers l'éditeur sur mobile
+    const selectQuestion = (i: number) => {
+        setSelIdx(i);
+        setMobileTab('editor');
+    };
 
     // ── Save / Publish ────────────────────────────────────────────────────────
     const save = () => {
@@ -196,7 +208,9 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
             <Head title={`${title} — STATS ENQUETES`} />
 
             {/* ── TOPBAR ─────────────────────────────────────────────────── */}
-            <div className="flex items-center justify-between gap-4 mb-5 bg-white rounded-2xl border border-slate-100 px-5 py-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 sm:mb-5 bg-white rounded-2xl border border-slate-100 px-4 sm:px-5 py-3 sm:py-3.5">
+
+                {/* Ligne 1 : titre + statut */}
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
                         <svg className="w-4 h-4 text-[#2563eb]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,11 +222,11 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
                             onChange={e => setTitle(e.target.value)}
                             onBlur={() => { setEditTitle(false); setTitle(t => t.trim() || 'Nouveau formulaire'); }}
                             onKeyDown={e => ['Enter','Escape'].includes(e.key) && (e.target as HTMLInputElement).blur()}
-                            className="flex-1 text-base font-bold text-[#0f172a] bg-transparent border-0 border-b-2 border-[#2563eb] outline-none focus:ring-0 min-w-0"
+                            className="flex-1 text-sm sm:text-base font-bold text-[#0f172a] bg-transparent border-0 border-b-2 border-[#2563eb] outline-none focus:ring-0 min-w-0"
                         />
                     ) : (
-                        <button onClick={() => setEditTitle(true)} className="flex items-center gap-2 group min-w-0">
-                            <span className="text-base font-bold text-[#0f172a] group-hover:text-[#2563eb] transition-colors truncate">{title}</span>
+                        <button onClick={() => setEditTitle(true)} className="flex items-center gap-2 group min-w-0 flex-1">
+                            <span className="text-sm sm:text-base font-bold text-[#0f172a] group-hover:text-[#2563eb] transition-colors truncate">{title}</span>
                             <svg className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#2563eb] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828A2 2 0 0111 14H9v-2a2 2 0 01.586-1.414z"/>
                             </svg>
@@ -222,26 +236,28 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
                         {formId ? (
                             <>
                                 <span className="text-xs font-semibold px-2 py-0.5 bg-green-50 text-green-700 border border-green-100 rounded-full">Enregistré</span>
-                                {reference && <span className="hidden sm:inline text-xs font-mono px-2 py-0.5 bg-slate-100 text-slate-400 rounded-full select-all">{reference}</span>}
+                                {reference && <span className="hidden lg:inline text-xs font-mono px-2 py-0.5 bg-slate-100 text-slate-400 rounded-full select-all">{reference}</span>}
                             </>
                         ) : (
                             <span className="text-xs font-semibold px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-full">Non enregistré</span>
                         )}
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <span className="hidden md:flex items-center gap-1.5 text-xs text-slate-400 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+
+                {/* Ligne 2 / Droite : actions */}
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
+                    <span className="hidden md:flex items-center gap-1.5 text-xs text-slate-400 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 flex-shrink-0">
                         {questions.length} champ{questions.length !== 1 ? 's' : ''}
                     </span>
-                    <button onClick={() => setPreview(true)} className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium bg-white border border-slate-200 text-slate-600 rounded-xl hover:border-blue-200 hover:text-[#2563eb] transition-all">
+                    <button onClick={() => setPreview(true)} className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 text-xs font-medium bg-white border border-slate-200 text-slate-600 rounded-xl hover:border-blue-200 hover:text-[#2563eb] transition-all">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                        Aperçu
+                        <span className="hidden sm:inline">Aperçu</span>
                     </button>
-                    <button onClick={save} disabled={saving} className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium bg-white border border-slate-200 text-slate-600 rounded-xl hover:border-blue-200 hover:text-[#2563eb] transition-all disabled:opacity-50">
+                    <button onClick={save} disabled={saving} className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 text-xs font-medium bg-white border border-slate-200 text-slate-600 rounded-xl hover:border-blue-200 hover:text-[#2563eb] transition-all disabled:opacity-50">
                         {saving ? <Spin /> : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>}
                         {saving ? 'Sauvegarde…' : 'Enregistrer'}
                     </button>
-                    <button onClick={publish} disabled={publishing} className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-[#2563eb] text-white rounded-xl hover:bg-[#1d4ed8] transition-all disabled:opacity-50">
+                    <button onClick={publish} disabled={publishing} className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-semibold bg-[#2563eb] text-white rounded-xl hover:bg-[#1d4ed8] transition-all disabled:opacity-50">
                         {publishing ? <Spin white /> : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/></svg>}
                         {publishing ? 'Publication…' : 'Publier'}
                     </button>
@@ -258,11 +274,37 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
                 </div>
             )}
 
-            {/* ── LAYOUT 3 COLONNES ──────────────────────────────────────── */}
-            <div className="flex gap-5" style={{ height: 'calc(100vh - 220px)' }}>
+            {/* ── ONGLETS MOBILE (< lg) ─────────────────────────────────── */}
+            <div className="lg:hidden flex items-center gap-1 mb-3 bg-white rounded-2xl border border-slate-100 p-1.5">
+                {([
+                    { key: 'questions',  label: 'Questions', badge: questions.length },
+                    { key: 'editor',     label: 'Éditeur',   badge: null },
+                    { key: 'properties', label: 'Propriétés',badge: null },
+                ] as { key: MobileTab; label: string; badge: number | null }[]).map(tab => (
+                    <button key={tab.key} onClick={() => setMobileTab(tab.key)}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all ${mobileTab === tab.key ? 'bg-[#2563eb] text-white shadow-sm' : 'text-slate-400 hover:text-[#0f172a]'}`}>
+                        {tab.label}
+                        {tab.badge !== null && (
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${mobileTab === tab.key ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                                {tab.badge}
+                            </span>
+                        )}
+                    </button>
+                ))}
+            </div>
 
-                {/* ── SIDEBAR GAUCHE ──────────────────────────────────────── */}
-                <div className="w-72 flex-shrink-0 flex flex-col bg-white rounded-2xl border border-slate-100 overflow-hidden">
+            {/* ── LAYOUT ───────────────────────────────────────────────────
+                Mobile : panneau unique selon mobileTab
+                lg+    : 3 colonnes fixes
+            ─────────────────────────────────────────────────────────────── */}
+            <div className="lg:flex lg:gap-5" style={{ height: 'calc(100vh - 260px)', minHeight: '400px' }}>
+
+                {/* ── SIDEBAR GAUCHE : Questions ───────────────────────── */}
+                <div className={`
+                    lg:w-72 lg:flex-shrink-0 flex flex-col bg-white rounded-2xl border border-slate-100 overflow-hidden
+                    ${mobileTab === 'questions' ? 'flex' : 'hidden lg:flex'}
+                    h-full
+                `}>
                     <div className="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between">
                         <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Questions</span>
                         <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{questions.length}</span>
@@ -278,7 +320,7 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
                                 <p className="text-xs text-slate-300">Cliquez sur + pour commencer</p>
                             </div>
                         ) : questions.map((q, i) => (
-                            <button key={i} onClick={() => setSelIdx(i)}
+                            <button key={i} onClick={() => selectQuestion(i)}
                                 className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-l-2 ${
                                     selIdx === i
                                         ? 'bg-blue-50 border-[#2563eb]'
@@ -301,7 +343,7 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
                         ))}
                     </div>
 
-                    {/* Bouton + palette ────────────────────────────────────── */}
+                    {/* Bouton + palette */}
                     <div className="p-3 border-t border-slate-100 relative" ref={paletteRef}>
                         <button onClick={() => setShowPalette(p => !p)}
                             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#2563eb] text-white text-xs font-semibold hover:bg-[#1d4ed8] transition-colors">
@@ -344,19 +386,23 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
                     </div>
                 </div>
 
-                {/* ── CENTRE : éditeur WYSIWYG ────────────────────────────── */}
-                <div className="flex-1 flex flex-col overflow-hidden">
+                {/* ── CENTRE : éditeur ─────────────────────────────────── */}
+                <div className={`
+                    flex-1 flex flex-col overflow-hidden
+                    ${mobileTab === 'editor' ? 'flex' : 'hidden lg:flex'}
+                    h-full
+                `}>
                     {sel && selIdx !== null ? (
                         <div className="flex-1 overflow-y-auto">
-                            <div className="bg-white rounded-2xl border-2 border-[#2563eb] shadow-lg shadow-blue-50 p-8 mb-4">
-                                {/* Header */}
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex items-center gap-2">
-                                        <span className="w-7 h-7 rounded-lg bg-[#2563eb] text-white flex items-center justify-center text-xs font-bold">{selIdx + 1}</span>
+                            <div className="bg-white rounded-2xl border-2 border-[#2563eb] shadow-lg shadow-blue-50 p-5 sm:p-8 mb-4">
+                                {/* Header éditeur */}
+                                <div className="flex items-center justify-between mb-5 sm:mb-6 gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="w-7 h-7 rounded-lg bg-[#2563eb] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">{selIdx + 1}</span>
                                         <span className="text-xs font-semibold text-[#2563eb] bg-blue-50 px-2.5 py-1 rounded-full">{TYPE_LABEL[sel.type] ?? sel.type}</span>
                                         {sel.properties.required && <span className="text-xs font-semibold text-red-500 bg-red-50 px-2 py-1 rounded-full">Obligatoire</span>}
                                     </div>
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 flex-shrink-0">
                                         <button onClick={() => moveUp(selIdx)} disabled={selIdx === 0}
                                             className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 disabled:opacity-30 transition-colors">
                                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7"/></svg>
@@ -369,6 +415,11 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
                                         <button onClick={() => dupe(selIdx)}
                                             className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-blue-100 hover:text-[#2563eb] transition-colors">
                                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                        </button>
+                                        {/* Raccourci vers propriétés sur mobile */}
+                                        <button onClick={() => setMobileTab('properties')}
+                                            className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-blue-100 hover:text-[#2563eb] transition-colors lg:hidden">
+                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                                         </button>
                                         <button onClick={() => remove(selIdx)}
                                             className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-red-100 hover:text-red-500 transition-colors">
@@ -396,16 +447,14 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
                                         <input value={sel.properties.label ?? ''}
                                             onChange={e => setProp(selIdx, 'label', e.target.value)}
                                             placeholder="Écrivez votre question ici…"
-                                            className="w-full text-xl font-semibold text-[#0f172a] bg-transparent border-0 border-b-2 border-slate-100 hover:border-slate-200 focus:border-[#2563eb] outline-none focus:ring-0 pb-1 placeholder-slate-300 mb-6"
+                                            className="w-full text-lg sm:text-xl font-semibold text-[#0f172a] bg-transparent border-0 border-b-2 border-slate-100 hover:border-slate-200 focus:border-[#2563eb] outline-none focus:ring-0 pb-1 placeholder-slate-300 mb-5 sm:mb-6"
                                         />
-                                        <div>
-                                            <LivePreview question={sel} interactive />
-                                        </div>
+                                        <LivePreview question={sel} interactive />
                                     </div>
                                 )}
                             </div>
 
-                            {/* Navigation */}
+                            {/* Navigation précédent / suivant */}
                             <div className="flex items-center justify-between px-1">
                                 <button onClick={() => selIdx > 0 && setSelIdx(selIdx - 1)} disabled={selIdx === 0}
                                     className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-[#2563eb] disabled:opacity-30 transition-colors">
@@ -422,7 +471,7 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
                         </div>
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl border-2 border-dashed border-slate-200">
-                            <div className="text-center max-w-xs">
+                            <div className="text-center max-w-xs px-6">
                                 <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
                                     <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828A2 2 0 0111 14H9v-2a2 2 0 01.586-1.414z"/>
@@ -431,12 +480,27 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
                                 {questions.length === 0 ? (
                                     <>
                                         <p className="text-sm font-semibold text-slate-500 mb-1">Formulaire vide</p>
-                                        <p className="text-xs text-slate-400 mb-5">Cliquez sur <strong>+ Ajouter un champ</strong> dans la sidebar pour commencer.</p>
+                                        <p className="text-xs text-slate-400 mb-5">
+                                            <span className="lg:hidden">Allez dans <strong>Questions</strong> et cliquez sur + pour commencer.</span>
+                                            <span className="hidden lg:inline">Cliquez sur <strong>+ Ajouter un champ</strong> dans la sidebar pour commencer.</span>
+                                        </p>
+                                        <button onClick={() => setMobileTab('questions')}
+                                            className="lg:hidden inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[#2563eb] px-4 py-2 rounded-xl hover:bg-[#1d4ed8] transition-colors">
+                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 5v14M5 12h14"/></svg>
+                                            Aller aux questions
+                                        </button>
                                     </>
                                 ) : (
                                     <>
                                         <p className="text-sm font-semibold text-slate-500 mb-1">Aucune question sélectionnée</p>
-                                        <p className="text-xs text-slate-400">Cliquez sur une question dans la liste à gauche pour l'éditer.</p>
+                                        <p className="text-xs text-slate-400 mb-5">
+                                            <span className="lg:hidden">Allez dans <strong>Questions</strong> et sélectionnez une question.</span>
+                                            <span className="hidden lg:inline">Cliquez sur une question dans la liste à gauche pour l'éditer.</span>
+                                        </p>
+                                        <button onClick={() => setMobileTab('questions')}
+                                            className="lg:hidden inline-flex items-center gap-1.5 text-xs font-semibold text-[#2563eb] border border-blue-200 px-4 py-2 rounded-xl hover:bg-blue-50 transition-colors">
+                                            Voir les questions →
+                                        </button>
                                     </>
                                 )}
                             </div>
@@ -444,11 +508,25 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
                     )}
                 </div>
 
-                {/* ── SIDEBAR DROITE : propriétés ─────────────────────────── */}
-                <div className="w-64 flex-shrink-0 flex flex-col bg-white rounded-2xl border border-slate-100 overflow-hidden">
-                    <div className="px-4 py-3.5 border-b border-slate-100">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Propriétés</span>
-                        {sel && <p className="text-xs text-[#2563eb] mt-0.5 font-medium">{TYPE_LABEL[sel.type] ?? sel.type}</p>}
+                {/* ── SIDEBAR DROITE : Propriétés ──────────────────────── */}
+                <div className={`
+                    lg:w-64 lg:flex-shrink-0 flex flex-col bg-white rounded-2xl border border-slate-100 overflow-hidden
+                    ${mobileTab === 'properties' ? 'flex' : 'hidden lg:flex'}
+                    h-full
+                `}>
+                    <div className="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between">
+                        <div>
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Propriétés</span>
+                            {sel && <p className="text-xs text-[#2563eb] mt-0.5 font-medium">{TYPE_LABEL[sel.type] ?? sel.type}</p>}
+                        </div>
+                        {/* Bouton retour vers éditeur sur mobile */}
+                        {sel && (
+                            <button onClick={() => setMobileTab('editor')}
+                                className="lg:hidden text-xs font-medium text-slate-400 hover:text-[#2563eb] transition-colors flex items-center gap-1">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
+                                Éditeur
+                            </button>
+                        )}
                     </div>
                     <div className="flex-1 overflow-y-auto p-4">
                         {sel && selIdx !== null ? (
@@ -467,20 +545,20 @@ export default function FormBuilder({ form, questions: init = [] }: Props) {
                 </div>
             </div>
 
-            {/* ── MODAL APERÇU ────────────────────────────────────────────── */}
+            {/* ── MODAL APERÇU ─────────────────────────────────────────── */}
             {preview && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPreview(false)}>
                     <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                        <div className="sticky top-0 bg-white flex items-center justify-between px-8 py-5 border-b border-slate-100">
+                        <div className="sticky top-0 bg-white flex items-center justify-between px-5 sm:px-8 py-4 sm:py-5 border-b border-slate-100">
                             <div>
-                                <h2 className="text-lg font-bold text-[#0f172a]">{title}</h2>
+                                <h2 className="text-base sm:text-lg font-bold text-[#0f172a]">{title}</h2>
                                 <p className="text-xs text-slate-400 mt-0.5">Aperçu — {questions.length} question{questions.length !== 1 ? 's' : ''}</p>
                             </div>
                             <button onClick={() => setPreview(false)} className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 transition-colors">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                         </div>
-                        <div className="p-8 space-y-6">
+                        <div className="p-5 sm:p-8 space-y-5 sm:space-y-6">
                             {questions.length === 0 ? (
                                 <p className="text-center text-slate-400 text-sm py-8">Aucun champ ajouté</p>
                             ) : questions.map((q, i) => (
@@ -552,10 +630,8 @@ function LivePreview({ question: q, interactive = false }: { question: Question;
             );
         case 'file_upload':
             return (
-                <label className={`border-2 border-dashed border-slate-200 rounded-xl p-8 text-center flex flex-col items-center ${interactive ? 'cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-all' : 'cursor-not-allowed'}`}>
-                    <svg className="w-8 h-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                    </svg>
+                <label className={`border-2 border-dashed border-slate-200 rounded-xl p-6 sm:p-8 text-center flex flex-col items-center ${interactive ? 'cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-all' : 'cursor-not-allowed'}`}>
+                    <svg className="w-8 h-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                     <p className="text-xs text-slate-400">Glisser un fichier ou <span className="text-[#2563eb] font-semibold">cliquer</span></p>
                     {interactive && <input type="file" className="sr-only" accept={q.properties.accept || undefined} />}
                 </label>
@@ -596,7 +672,6 @@ function PropertiesPanel({ question: q, onChange }: { question: Question; onChan
                 <div><label className={lbl}>Placeholder</label><input value={q.properties.placeholder ?? ''} onChange={e => onChange('placeholder', e.target.value)} className={inp} placeholder="Texte indicatif…"/></div>
             )}
 
-            {/* Toggle obligatoire */}
             <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                 <span className="text-xs font-medium text-slate-600">Obligatoire</span>
                 <button onClick={() => onChange('required', !q.properties.required)}

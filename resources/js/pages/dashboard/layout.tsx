@@ -1,5 +1,5 @@
 import { Head, Link, usePage, router } from '@inertiajs/react';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { PageProps as InertiaPageProps } from '@inertiajs/core';
 
 interface DashboardLayoutProps {
@@ -23,32 +23,33 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
     const { url, props } = usePage<PageProps>();
     const { auth } = props;
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    // Ferme le sidebar lors d'un changement de route (navigation mobile)
+    useEffect(() => {
+        setSidebarOpen(false);
+    }, [url]);
+
+    // Empêche le scroll du body quand le sidebar est ouvert sur mobile
+    useEffect(() => {
+        if (sidebarOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => { document.body.style.overflow = ''; };
+    }, [sidebarOpen]);
 
     const isActive = (path: string) => {
         const currentPath = url.split('?')[0].replace(/\/$/, '');
         const cleanPath = path.replace(/\/$/, '');
-
         const exactRoutes = [
-            '/dashboard',
-            '/enquetes',
-            '/enquetes/create',
-            '/reponses',
-            '/modeles',
-            '/contacts',
-            '/distributions',
-            '/invitations',
-            '/rapports',
-            '/exports',
-            '/insights',
-            '/equipe',
-            '/espaces',
-            '/integrations',
+            '/dashboard', '/enquetes', '/enquetes/create', '/reponses',
+            '/modeles', '/contacts', '/distributions', '/invitations',
+            '/rapports', '/exports', '/insights', '/equipe',
+            '/espaces', '/integrations',
         ];
-
-        if (exactRoutes.includes(cleanPath)) {
-            return currentPath === cleanPath;
-        }
-
+        if (exactRoutes.includes(cleanPath)) return currentPath === cleanPath;
         return currentPath === cleanPath || currentPath.startsWith(cleanPath + '/');
     };
 
@@ -66,22 +67,49 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
 
             <div className="flex min-h-screen bg-slate-50">
 
-                {/* ─── SIDEBAR ─── */}
-                <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-[#0f172a] flex flex-col">
+                {/* ─── OVERLAY MOBILE ─── */}
+                {sidebarOpen && (
+                    <div
+                        className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
+                        onClick={() => setSidebarOpen(false)}
+                        aria-hidden="true"
+                    />
+                )}
 
-                    {/* Logo */}
-                    <div className="flex h-16 items-center gap-3 px-6 border-b border-white/5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2563eb]">
-                            <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                            </svg>
+                {/* ─── SIDEBAR ─── */}
+                <aside className={`
+                    fixed left-0 top-0 z-40 h-screen w-64 bg-[#0f172a] flex flex-col
+                    transition-transform duration-300 ease-in-out
+                    ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+                    lg:translate-x-0
+                `}>
+
+                    {/* Logo + bouton fermeture (mobile) */}
+                    <div className="flex h-16 items-center justify-between px-6 border-b border-white/5">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2563eb] flex-shrink-0">
+                                <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                </svg>
+                            </div>
+                            <span className="text-sm font-bold text-white tracking-tight">STATS ENQUETES</span>
                         </div>
-                        <span className="text-sm font-bold text-white tracking-tight">STAT ENQUETE</span>
+
+                        {/* Bouton × visible uniquement sur mobile */}
+                        <button
+                            onClick={() => setSidebarOpen(false)}
+                            className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                            aria-label="Fermer le menu"
+                        >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
                     </div>
 
                     {/* Nav */}
                     <nav className="flex-1 overflow-y-auto py-4 px-3 scrollbar-none">
-
                         <div className="mb-6">
                             <NavLink href="/dashboard" icon={<HomeIcon />} active={isActive('/dashboard')}>
                                 Tableau de bord
@@ -95,9 +123,9 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                         </NavSection>
 
                         <NavSection title="Collecte">
-                            <NavLink href="/reponses"      icon={<InboxIcon />}   active={isActive('/reponses')}>Réponses</NavLink>
-                            <NavLink href="/contacts"      icon={<ContactIcon />} active={isActive('/contacts')}>Contacts</NavLink>
-                            <NavLink href="/invitations"   icon={<MailIcon />}   active={isActive('/invitations')}>Invitations</NavLink>
+                            <NavLink href="/reponses"    icon={<InboxIcon />}   active={isActive('/reponses')}>Réponses</NavLink>
+                            <NavLink href="/contacts"    icon={<ContactIcon />} active={isActive('/contacts')}>Contacts</NavLink>
+                            <NavLink href="/invitations" icon={<MailIcon />}    active={isActive('/invitations')}>Invitations</NavLink>
                         </NavSection>
 
                         <NavSection title="Analyse">
@@ -106,8 +134,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                         </NavSection>
 
                         <NavSection title="Paramètres">
-                            <NavLink href="/equipe"        icon={<UsersGroupIcon />} active={isActive('/equipe')}>Équipe</NavLink>
-                      
+                            <NavLink href="/equipe" icon={<UsersGroupIcon />} active={isActive('/equipe')}>Équipe</NavLink>
                         </NavSection>
                     </nav>
 
@@ -131,26 +158,46 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                 </aside>
 
                 {/* ─── MAIN ─── */}
-                <div className="ml-64 flex-1 flex flex-col">
+                {/* ml-0 sur mobile, ml-64 à partir de lg */}
+                <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
 
                     {/* Header */}
-                    <header className="sticky top-0 z-30 h-16 bg-white border-b border-slate-100 flex items-center justify-between px-8">
-                        <div>
-                            <h1 className="text-base font-bold text-[#0f172a] tracking-tight">{title}</h1>
-                            {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+                    <header className="sticky top-0 z-30 h-16 bg-white border-b border-slate-100 flex items-center justify-between px-4 sm:px-8 gap-3">
+
+                        {/* Gauche : hamburger (mobile) + titre */}
+                        <div className="flex items-center gap-3 min-w-0">
+                            {/* Hamburger — visible uniquement sous lg */}
+                            <button
+                                onClick={() => setSidebarOpen(true)}
+                                className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-[#2563eb] hover:border-blue-200 transition-all flex-shrink-0"
+                                aria-label="Ouvrir le menu"
+                            >
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/>
+                                </svg>
+                            </button>
+
+                            <div className="min-w-0">
+                                <h1 className="text-sm sm:text-base font-bold text-[#0f172a] tracking-tight truncate">{title}</h1>
+                                {subtitle && <p className="text-xs text-slate-400 mt-0.5 hidden sm:block truncate">{subtitle}</p>}
+                            </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            <Link href="/enquetes/create"
-                                className="hidden md:inline-flex items-center gap-2 bg-[#2563eb] text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-[#1d4ed8] transition-colors">
+                        {/* Droite : actions */}
+                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                            <Link
+                                href="/enquetes/create"
+                                className="hidden sm:inline-flex items-center gap-2 bg-[#2563eb] text-white text-xs font-semibold px-3 sm:px-4 py-2 rounded-xl hover:bg-[#1d4ed8] transition-colors"
+                            >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 5v14M5 12h14"/>
                                 </svg>
-                                Nouvelle enquête
+                                <span className="hidden md:inline">Nouvelle enquête</span>
+                                <span className="sm:inline md:hidden">Nouveau</span>
                             </Link>
 
                             {/* Notif */}
-                            <button className="relative w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-[#2563eb] hover:border-blue-200 transition-all">
+                            <button className="relative w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-[#2563eb] hover:border-blue-200 transition-all flex-shrink-0">
                                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
                                     <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                                     <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -163,12 +210,13 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                                 <div className="relative">
                                     <button
                                         onClick={() => setShowUserMenu(!showUserMenu)}
-                                        className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 hover:border-blue-200 transition-all">
-                                        <div className="h-7 w-7 rounded-lg bg-[#2563eb] flex items-center justify-center text-white text-xs font-bold">
+                                        className="flex items-center gap-2 sm:gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-2 sm:px-3 py-2 hover:border-blue-200 transition-all"
+                                    >
+                                        <div className="h-7 w-7 rounded-lg bg-[#2563eb] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                                             {getInitials(auth.user.name)}
                                         </div>
                                         <span className="hidden md:block text-sm font-semibold text-[#0f172a]">{auth.user.name}</span>
-                                        <svg className={`h-4 w-4 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none">
+                                        <svg className={`hidden sm:block h-4 w-4 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none">
                                             <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                         </svg>
                                     </button>
@@ -179,7 +227,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                                             <div className="absolute right-0 mt-2 w-60 z-50 bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-100 overflow-hidden">
                                                 <div className="p-4 border-b border-slate-100 bg-slate-50">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="h-10 w-10 rounded-xl bg-[#2563eb] flex items-center justify-center text-white text-sm font-bold">
+                                                        <div className="h-10 w-10 rounded-xl bg-[#2563eb] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                                                             {getInitials(auth.user.name)}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
@@ -215,7 +263,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                     </header>
 
                     {/* Content */}
-                    <main className="flex-1 p-8">{children}</main>
+                    <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
                 </div>
             </div>
         </>
@@ -259,11 +307,7 @@ function PlusCircleIcon() { return <svg className="h-4 w-4" viewBox="0 0 24 24" 
 function TemplateIcon()   { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M3 9h18M9 21V9" stroke="currentColor" strokeWidth="1.5"/></svg>; }
 function InboxIcon()      { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M22 12h-6l-2 3h-4l-2-3H2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>; }
 function ContactIcon()    { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.5"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }
-function ShareIcon()      { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="1.5"/><circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/><circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke="currentColor" strokeWidth="1.5"/></svg>; }
 function MailIcon()       { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" strokeWidth="1.5"/><path d="M22 6l-10 7L2 6" stroke="currentColor" strokeWidth="1.5"/></svg>; }
 function ChartIcon()      { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }
 function ExportIcon()     { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>; }
-function SparkIcon()      { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>; }
 function UsersGroupIcon() { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M17 21V19C17 16.7909 15.2091 15 13 15H5C2.79086 15 1 16.7909 1 19V21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.5"/><path d="M23 21V19C22.9986 17.1771 21.765 15.5857 20 15.13M16 3.13C17.7699 3.58317 19.0078 5.17799 19.0078 7.005C19.0078 8.83201 17.7699 10.4268 16 10.88" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }
-function BuildingIcon()   { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M19 21V5C19 3.89543 18.1046 3 17 3H7C5.89543 3 5 3.89543 5 5V21M19 21H5M19 21H21M5 21H3M9 7H10M9 11H10M14 7H15M14 11H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }
-function PlugIcon()       { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M12 22v-5M12 7V2M7 7h10l-1 5H8L7 7zM5 17h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>; }
