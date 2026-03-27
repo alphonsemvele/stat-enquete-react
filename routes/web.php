@@ -13,6 +13,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RapportController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\ExportController;
 
 // ─── Page d'accueil publique ───────────────────────────────────────────────────
 Route::get('/', function () {
@@ -24,6 +25,29 @@ require __DIR__ . '/auth.php';
 
 // ─── Routes protégées ─────────────────────────────────────────────────────────
 Route::middleware(['auth', 'verified'])->group(function () {
+
+
+
+    // ── Exports ───────────────────────────────────────────────────────────────────
+Route::prefix('exports')->name('exports.')->group(function () {
+    Route::get('/',                        [ExportController::class, 'index'])             ->name('index');
+ 
+    // Excel
+    Route::get('/reponses/excel',          [ExportController::class, 'reponsesExcel'])     ->name('reponses.excel');
+    Route::get('/reponses/toutes/excel',   [ExportController::class, 'toutesReponsesExcel'])->name('reponses.toutes.excel');
+    Route::get('/contacts/excel',          [ExportController::class, 'contactsExcel'])     ->name('contacts.excel');
+    Route::get('/invitations/excel',       [ExportController::class, 'invitationsExcel'])  ->name('invitations.excel');
+    Route::get('/rapport/excel',           [ExportController::class, 'rapportExcel'])      ->name('rapport.excel');
+    Route::get('/enquetes/excel',          [ExportController::class, 'enquetesExcel'])     ->name('enquetes.excel');
+ 
+    // PDF
+    Route::get('/reponses/pdf',            [ExportController::class, 'reponsesPdf'])       ->name('reponses.pdf');
+    Route::get('/rapport/pdf',             [ExportController::class, 'rapportPdf'])        ->name('rapport.pdf');
+    Route::get('/fiche-enquete/pdf',       [ExportController::class, 'ficheEnquetePdf'])   ->name('fiche-enquete.pdf');
+    Route::get('/contacts/pdf',            [ExportController::class, 'contactsPdf'])       ->name('contacts.pdf');
+    Route::get('/invitations/pdf',         [ExportController::class, 'invitationsPdf'])    ->name('invitations.pdf');
+});
+ 
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -96,9 +120,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('contacts.list');
 
     // ── Exports ───────────────────────────────────────────────────────────────
-    Route::get('/exports', function () {
-        return Inertia::render('dashboard/exports');
-    })->name('exports.index');
+
 
     // ── Insights IA ───────────────────────────────────────────────────────────
     Route::get('/insights', function () {
