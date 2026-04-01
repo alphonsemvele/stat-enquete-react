@@ -7,8 +7,7 @@ use App\Http\Controllers\FormController;
 use App\Http\Controllers\FormResponseController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\EquipeController;
-use App\Http\Controllers\EspaceController;
-use App\Http\Controllers\IntegrationController;
+
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RapportController;
 use App\Http\Controllers\ContactController;
@@ -172,9 +171,7 @@ Route::prefix('exports')->name('exports.')->group(function () {
 
 
     // ── Insights IA ───────────────────────────────────────────────────────────
-    Route::get('/insights', function () {
-        return Inertia::render('dashboard/insights');
-    })->name('insights.index');
+
 
     // ── Équipe ────────────────────────────────────────────────────────────────
    Route::prefix('equipe')->name('equipe.')->group(function () {
@@ -190,15 +187,8 @@ Route::get('/equipe/invitation/{token}/accepter', [EquipeController::class, 'acc
 Route::get('/equipe/invitation/{token}/refuser',  [EquipeController::class, 'refuser']) ->name('equipe.refuser');
 
     // ── Espaces de travail ────────────────────────────────────────────────────
-    Route::prefix('espaces')->name('espaces.')->group(function () {
-        Route::get('/',            [EspaceController::class, 'index'])  ->name('index');
-        Route::post('/',           [EspaceController::class, 'store'])  ->name('store');
-        Route::put('/{espace}',    [EspaceController::class, 'update']) ->name('update');
-        Route::delete('/{espace}', [EspaceController::class, 'destroy'])->name('destroy');
-    });
-
+ 
     // ── Intégrations ──────────────────────────────────────────────────────────
-    Route::get('/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
 
     // ── Profil ────────────────────────────────────────────────────────────────
     Route::prefix('profile')->name('profile.')->group(function () {
