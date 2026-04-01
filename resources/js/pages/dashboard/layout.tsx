@@ -13,6 +13,7 @@ interface User {
     name: string;
     email: string;
     role?: string;
+    is_admin?: boolean;
 }
 
 interface PageProps extends InertiaPageProps {
@@ -22,21 +23,16 @@ interface PageProps extends InertiaPageProps {
 export default function DashboardLayout({ children, title, subtitle }: DashboardLayoutProps) {
     const { url, props } = usePage<PageProps>();
     const { auth } = props;
+    const isAdmin = auth?.user?.is_admin ?? auth?.user?.role === 'admin';
+
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    // Ferme le sidebar lors d'un changement de route (navigation mobile)
-    useEffect(() => {
-        setSidebarOpen(false);
-    }, [url]);
+    useEffect(() => { setSidebarOpen(false); }, [url]);
 
-    // Empêche le scroll du body quand le sidebar est ouvert sur mobile
     useEffect(() => {
-        if (sidebarOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
+        if (sidebarOpen) { document.body.style.overflow = 'hidden'; }
+        else             { document.body.style.overflow = ''; }
         return () => { document.body.style.overflow = ''; };
     }, [sidebarOpen]);
 
@@ -67,16 +63,13 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
 
             <div className="flex min-h-screen bg-slate-50">
 
-                {/* ─── OVERLAY MOBILE ─── */}
+                {/* OVERLAY MOBILE */}
                 {sidebarOpen && (
-                    <div
-                        className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
-                        onClick={() => setSidebarOpen(false)}
-                        aria-hidden="true"
-                    />
+                    <div className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
+                        onClick={() => setSidebarOpen(false)} aria-hidden="true"/>
                 )}
 
-                {/* ─── SIDEBAR ─── */}
+                {/* SIDEBAR */}
                 <aside className={`
                     fixed left-0 top-0 z-40 h-screen w-64 bg-[#0f172a] flex flex-col
                     transition-transform duration-300 ease-in-out
@@ -84,7 +77,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                     lg:translate-x-0
                 `}>
 
-                    {/* Logo + bouton fermeture (mobile) */}
+                    {/* Logo */}
                     <div className="flex h-16 items-center justify-between px-6 border-b border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2563eb] flex-shrink-0">
@@ -95,13 +88,8 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                             </div>
                             <span className="text-sm font-bold text-white tracking-tight">STATS ENQUETES</span>
                         </div>
-
-                        {/* Bouton × visible uniquement sur mobile */}
-                        <button
-                            onClick={() => setSidebarOpen(false)}
-                            className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-                            aria-label="Fermer le menu"
-                        >
+                        <button onClick={() => setSidebarOpen(false)}
+                            className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
                             </svg>
@@ -136,18 +124,44 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                         <NavSection title="Paramètres">
                             <NavLink href="/equipe" icon={<UsersGroupIcon />} active={isActive('/equipe')}>Équipe</NavLink>
                         </NavSection>
+
+                        {/* ── BOUTON ADMIN ── visible seulement si is_admin */}
+                        {isAdmin && (
+                            <div className="mt-4 px-0">
+                                <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-600">Administration</p>
+                                <Link href="/admin"
+                                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 group">
+                                    <span className="w-5 h-5 rounded-md bg-red-500 flex items-center justify-center flex-shrink-0">
+                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
+                                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                    </span>
+                                    <span className="font-semibold">Espace Admin</span>
+                                    <svg className="w-3 h-3 ml-auto opacity-50 group-hover:translate-x-0.5 transition-transform"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </Link>
+                            </div>
+                        )}
                     </nav>
 
                     {/* User footer */}
                     {auth?.user && (
                         <div className="border-t border-white/5 p-3">
-                            <Link href="/profile" className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white/5 transition-colors group">
+                            <Link href="/profile"
+                                className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white/5 transition-colors group">
                                 <div className="h-8 w-8 rounded-lg bg-[#2563eb] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                                     {getInitials(auth.user.name)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-semibold text-white truncate group-hover:text-blue-200 transition-colors">{auth.user.name}</p>
-                                    <p className="text-xs text-slate-500 truncate">{auth.user.role ?? auth.user.email}</p>
+                                    <p className="text-xs font-semibold text-white truncate group-hover:text-blue-200 transition-colors">
+                                        {auth.user.name}
+                                    </p>
+                                    <p className="text-xs text-slate-500 truncate">
+                                        {isAdmin ? '👑 Administrateur' : auth.user.email}
+                                    </p>
                                 </div>
                                 <svg className="w-3.5 h-3.5 text-slate-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
@@ -157,38 +171,41 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                     )}
                 </aside>
 
-                {/* ─── MAIN ─── */}
-                {/* ml-0 sur mobile, ml-64 à partir de lg */}
+                {/* MAIN */}
                 <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
 
                     {/* Header */}
                     <header className="sticky top-0 z-30 h-16 bg-white border-b border-slate-100 flex items-center justify-between px-4 sm:px-8 gap-3">
 
-                        {/* Gauche : hamburger (mobile) + titre */}
                         <div className="flex items-center gap-3 min-w-0">
-                            {/* Hamburger — visible uniquement sous lg */}
-                            <button
-                                onClick={() => setSidebarOpen(true)}
-                                className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-[#2563eb] hover:border-blue-200 transition-all flex-shrink-0"
-                                aria-label="Ouvrir le menu"
-                            >
+                            <button onClick={() => setSidebarOpen(true)}
+                                className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-[#2563eb] hover:border-blue-200 transition-all flex-shrink-0">
                                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/>
                                 </svg>
                             </button>
-
                             <div className="min-w-0">
                                 <h1 className="text-sm sm:text-base font-bold text-[#0f172a] tracking-tight truncate">{title}</h1>
                                 {subtitle && <p className="text-xs text-slate-400 mt-0.5 hidden sm:block truncate">{subtitle}</p>}
                             </div>
                         </div>
 
-                        {/* Droite : actions */}
                         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                            <Link
-                                href="/enquetes/create"
-                                className="hidden sm:inline-flex items-center gap-2 bg-[#2563eb] text-white text-xs font-semibold px-3 sm:px-4 py-2 rounded-xl hover:bg-[#1d4ed8] transition-colors"
-                            >
+
+                            {/* Bouton admin rapide dans le header */}
+                            {isAdmin && (
+                                <Link href="/admin"
+                                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-bold hover:bg-red-100 transition-colors">
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
+                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                    </svg>
+                                    Admin
+                                </Link>
+                            )}
+
+                            <Link href="/enquetes/create"
+                                className="hidden sm:inline-flex items-center gap-2 bg-[#2563eb] text-white text-xs font-semibold px-3 sm:px-4 py-2 rounded-xl hover:bg-[#1d4ed8] transition-colors">
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 5v14M5 12h14"/>
                                 </svg>
@@ -208,10 +225,8 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                             {/* User menu */}
                             {auth?.user && (
                                 <div className="relative">
-                                    <button
-                                        onClick={() => setShowUserMenu(!showUserMenu)}
-                                        className="flex items-center gap-2 sm:gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-2 sm:px-3 py-2 hover:border-blue-200 transition-all"
-                                    >
+                                    <button onClick={() => setShowUserMenu(!showUserMenu)}
+                                        className="flex items-center gap-2 sm:gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-2 sm:px-3 py-2 hover:border-blue-200 transition-all">
                                         <div className="h-7 w-7 rounded-lg bg-[#2563eb] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                                             {getInitials(auth.user.name)}
                                         </div>
@@ -223,7 +238,7 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
 
                                     {showUserMenu && (
                                         <>
-                                            <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
+                                            <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)}/>
                                             <div className="absolute right-0 mt-2 w-60 z-50 bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-100 overflow-hidden">
                                                 <div className="p-4 border-b border-slate-100 bg-slate-50">
                                                     <div className="flex items-center gap-3">
@@ -233,6 +248,11 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                                                         <div className="flex-1 min-w-0">
                                                             <p className="text-sm font-bold text-[#0f172a] truncate">{auth.user.name}</p>
                                                             <p className="text-xs text-slate-400 truncate">{auth.user.email}</p>
+                                                            {isAdmin && (
+                                                                <span className="inline-block mt-0.5 text-[10px] font-bold px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full">
+                                                                    👑 Admin
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -247,10 +267,26 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
                                                         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" strokeWidth="1.5"/></svg>
                                                         Paramètres
                                                     </Link>
-                                                    <div className="my-1 h-px bg-slate-100" />
+
+                                                    {/* Lien admin dans le menu user */}
+                                                    {isAdmin && (
+                                                        <>
+                                                            <div className="my-1 h-px bg-slate-100"/>
+                                                            <Link href="/admin" onClick={() => setShowUserMenu(false)}
+                                                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors">
+                                                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                                                </svg>
+                                                                Espace Admin
+                                                            </Link>
+                                                        </>
+                                                    )}
+
+                                                    <div className="my-1 h-px bg-slate-100"/>
                                                     <button onClick={handleLogout}
                                                         className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors">
-                                                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M16 17L21 12L16 7M21 12H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 20V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M16 17L21 12L16 7M21 12H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                                         Se déconnecter
                                                     </button>
                                                 </div>
@@ -269,8 +305,6 @@ export default function DashboardLayout({ children, title, subtitle }: Dashboard
         </>
     );
 }
-
-// ─── NavSection & NavLink ─────────────────────────────────────────────────────
 
 function NavSection({ title, children }: { title: string; children: ReactNode }) {
     return (
@@ -298,8 +332,6 @@ function NavLink({ href, icon, children, active = false }: {
         </li>
     );
 }
-
-// ─── Icons ────────────────────────────────────────────────────────────────────
 
 function HomeIcon()       { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M9 22V12H15V22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>; }
 function FormIcon()       { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6M9 16h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }

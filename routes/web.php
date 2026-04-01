@@ -14,6 +14,16 @@ use App\Http\Controllers\RapportController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\AdminEnqueteController;
+use App\Http\Controllers\Admin\AdminReponseController;
+use App\Http\Controllers\Admin\AdminRoleController;
+
+
+
+
+
 
 // ─── Page d'accueil publique ───────────────────────────────────────────────────
 Route::get('/', function () {
@@ -22,6 +32,45 @@ Route::get('/', function () {
 
 // ─── Auth (login, register, logout, password…) ────────────────────────────────
 require __DIR__ . '/auth.php';
+
+Route::middleware(['auth', 'verified','admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+ 
+        // Dashboard
+        Route::get('/', [AdminController::class, 'index'])->name('index');
+ 
+        // Utilisateurs
+      Route::prefix('users')->name('users.')->group(function () {
+    Route::get('/',                     [AdminUserController::class, 'index'])      ->name('index');
+    Route::post('/',                    [AdminUserController::class, 'store'])      ->name('store');  // ← ajouter
+    Route::get('/{user}',               [AdminUserController::class, 'show'])       ->name('show');
+    Route::post('/{user}/toggle-block', [AdminUserController::class, 'toggleBlock'])->name('toggle-block');
+    Route::patch('/{user}/role',        [AdminUserController::class, 'updateRole']) ->name('update-role');
+    Route::delete('/{user}',            [AdminUserController::class, 'destroy'])    ->name('destroy');
+});
+
+    Route::prefix('roles')->name('roles.')->group(function () {
+    Route::get('/',                    [AdminRoleController::class, 'index'])  ->name('index');
+    Route::patch('/{user}/role',       [AdminRoleController::class, 'update']) ->name('update');
+    Route::post('/{user}/promote',     [AdminRoleController::class, 'promote'])->name('promote');
+    Route::post('/{user}/demote',      [AdminRoleController::class, 'demote']) ->name('demote');
+});
+ 
+        // Enquêtes
+        Route::prefix('enquetes')->name('enquetes.')->group(function () {
+            Route::get('/',                          [AdminEnqueteController::class, 'index'])      ->name('index');
+            Route::post('/{form}/fermer',            [AdminEnqueteController::class, 'forceClose']) ->name('close');
+            Route::delete('/{form}',                 [AdminEnqueteController::class, 'destroy'])    ->name('destroy');
+        });
+ 
+        // Réponses
+        Route::prefix('reponses')->name('reponses.')->group(function () {
+            Route::get('/',                          [AdminReponseController::class, 'index'])   ->name('index');
+            Route::delete('/{response}',             [AdminReponseController::class, 'destroy']) ->name('destroy');
+        });
+    });
 
 // ─── Routes protégées ─────────────────────────────────────────────────────────
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -128,12 +177,17 @@ Route::prefix('exports')->name('exports.')->group(function () {
     })->name('insights.index');
 
     // ── Équipe ────────────────────────────────────────────────────────────────
-    Route::prefix('equipe')->name('equipe.')->group(function () {
-        Route::get('/',            [EquipeController::class, 'index'])  ->name('index');
-        Route::post('/',           [EquipeController::class, 'store'])  ->name('store');
-        Route::put('/{membre}',    [EquipeController::class, 'update']) ->name('update');
-        Route::delete('/{membre}', [EquipeController::class, 'destroy'])->name('destroy');
-    });
+   Route::prefix('equipe')->name('equipe.')->group(function () {
+    Route::get('/',                               [EquipeController::class, 'index'])   ->name('index');
+    Route::post('/',                              [EquipeController::class, 'store'])   ->name('store');
+    Route::put('/{membre}',                       [EquipeController::class, 'update'])  ->name('update');
+    Route::delete('/{membre}',                    [EquipeController::class, 'destroy']) ->name('destroy');
+    Route::delete('/invitation/{invitation}/annuler', [EquipeController::class, 'annuler'])->name('annuler');
+});
+ 
+// ── Accepter / Refuser une invitation (public) ────────────────────────────────
+Route::get('/equipe/invitation/{token}/accepter', [EquipeController::class, 'accepter'])->name('equipe.accepter');
+Route::get('/equipe/invitation/{token}/refuser',  [EquipeController::class, 'refuser']) ->name('equipe.refuser');
 
     // ── Espaces de travail ────────────────────────────────────────────────────
     Route::prefix('espaces')->name('espaces.')->group(function () {

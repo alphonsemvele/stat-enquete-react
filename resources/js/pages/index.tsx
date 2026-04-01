@@ -43,7 +43,7 @@ export default function Welcome() {
                             <span className="font-bold text-[#0f172a] text-lg tracking-tight">STATS ENQUETES</span>
                         </div>
                         <div className="hidden md:flex items-center gap-8">
-                            {[['Fonctionnalités', '#features'], ['Modèles', '#modeles'], ['Tarifs', '#tarifs'], ['Démo', '#demo']].map(([label, href]) => (
+                            {[['Fonctionnalités', '#features'], ['Modèles', '#modeles'], ['Démo', '#demo']].map(([label, href]) => (
                                 <a key={label} href={href} className="text-sm text-slate-500 hover:text-[#2563eb] transition-colors font-medium">{label}</a>
                             ))}
                         </div>
@@ -299,50 +299,7 @@ export default function Welcome() {
                     </div>
                 </section>
 
-                {/* ─── PRICING ─── */}
-                <section id="tarifs" className="py-28 px-6 bg-white">
-                    <div className="mx-auto max-w-7xl">
-                        <div className="text-center mb-16">
-                            <p className="text-xs font-bold uppercase tracking-widest text-[#2563eb] mb-3">Tarifs</p>
-                            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#0f172a]">Simple et transparent</h2>
-                            <p className="text-slate-500 mt-4 text-base">Choisissez selon votre organisation</p>
-                        </div>
-                        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                            {[
-                                { name: 'Gratuit', price: '0', per: '/mois', desc: 'Pour commencer', features: ['3 enquêtes actives', '100 réponses / mois', '10 types de champs', 'Export CSV', 'Support communauté'], cta: 'Commencer', highlight: false },
-                                { name: 'Pro', price: '29 900 F', per: '/mois', desc: 'Pour les équipes en croissance', features: ['Enquêtes illimitées', 'Réponses illimitées', 'Analyse IA incluse', 'Tous les types', 'API complète', 'Support prioritaire 24/7'], cta: 'Essai 14 jours gratuit', highlight: true },
-                                { name: 'Enterprise', price: 'Sur devis', per: '', desc: 'Pour les grandes organisations', features: ['Tout illimité', 'SSO & SAML', 'Data residency', 'SLA 99.99%', 'Account manager', 'Onboarding dédié'], cta: 'Nous contacter', highlight: false },
-                            ].map((plan, i) => (
-                                <div key={i} className={`relative rounded-3xl border p-8 flex flex-col ${plan.highlight ? 'border-[#2563eb] shadow-2xl shadow-blue-100 scale-105' : 'border-slate-200'}`}>
-                                    {plan.highlight && (
-                                        <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                                            <span className="bg-[#2563eb] text-white text-xs font-bold px-4 py-1.5 rounded-full">Le plus populaire</span>
-                                        </div>
-                                    )}
-                                    <div className="mb-6">
-                                        <h3 className="font-bold text-lg text-[#0f172a] mb-1">{plan.name}</h3>
-                                        <p className="text-xs text-slate-400">{plan.desc}</p>
-                                    </div>
-                                    <div className="mb-8 pb-6 border-b border-slate-100">
-                                        <span className="text-4xl font-extrabold text-[#0f172a]">{plan.price}</span>
-                                        {plan.per && <span className="text-slate-400 ml-1 text-sm">{plan.per}</span>}
-                                    </div>
-                                    <ul className="space-y-3 flex-1 mb-8">
-                                        {plan.features.map(f => (
-                                            <li key={f} className="flex items-center gap-3 text-sm text-slate-500">
-                                                <svg className="w-4 h-4 flex-shrink-0 text-[#2563eb]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/></svg>
-                                                {f}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                    <button className={`w-full py-3.5 rounded-xl text-sm font-semibold transition-all ${plan.highlight ? 'bg-[#2563eb] text-white hover:bg-[#1d4ed8]' : 'border-2 border-slate-200 text-slate-600 hover:border-[#2563eb] hover:text-[#2563eb]'}`}>
-                                        {plan.cta}
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
+             
 
                 {/* ─── FAQ ─── */}
                 <section className="py-28 px-6 bg-slate-50">
@@ -411,7 +368,7 @@ export default function Welcome() {
                                 <p className="text-sm text-slate-400 max-w-xs leading-relaxed">La plateforme d'enquête moderne pour collecter, analyser et agir sur vos données.</p>
                             </div>
                             {[
-                                { h: 'Produit', links: ['Fonctionnalités', 'Modèles', 'Intégrations', 'API', 'Tarifs'] },
+                                { h: 'Produit', links: ['Fonctionnalités', 'Modèles', 'Intégrations', 'API'] },
                                 { h: 'Support', links: ['Documentation', 'Tutoriels', 'FAQ', 'Contact', 'Statut'] },
                             ].map(col => (
                                 <div key={col.h}>

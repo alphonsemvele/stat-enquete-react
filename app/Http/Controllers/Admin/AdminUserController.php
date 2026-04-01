@@ -3,185 +3,197 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\UserStoreRequest;
-use App\Http\Requests\UserUpdateRequest;
+use App\Mail\notifMail;
 use App\Models\User;
-use App\Models\Service;
-use Illuminate\Http\RedirectResponse;
+use App\Models\Form;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
-use Inertia\Response;
 
 class AdminUserController extends Controller
 {
-    const STATUT_ACTIF    = 'actif';
-    const STATUT_CONGE    = 'conge';
-    const STATUT_MISSION  = 'mission';
-    const STATUT_INACTIF  = 'inactif';
-
-    const FONCTIONS = [
-        'Médecin',
-        'Infirmière',
-        'Infirmière Chef',
-        'Sage-femme',
-        'Pharmacien(ne)',
-        'Technicien(ne)',
-        'Administratif',
-        'Admin',
-    ];
-
-    const ROLES = [
-        'admin',
-        'medecin',
-        'infirmier',
-        'pharmacien',
-        'laborantin',
-        'receptionniste',
-        'comptable',
-    ];
-
-    public static function getStatuts(): array
-    {
-        return [
-            self::STATUT_ACTIF,
-            self::STATUT_CONGE,
-            self::STATUT_MISSION,
-            self::STATUT_INACTIF,
-        ];
-    }
-
-    /**
-     * Liste paginée avec filtres + stats.
-     */
-    public function index(Request $request): Response
-    {
-        $query = User::with('service');
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name',       'like', "%{$search}%")
-                  ->orWhere('lastname',  'like', "%{$search}%")
-                  ->orWhere('matricule', 'like', "%{$search}%")
-                  ->orWhere('email',     'like', "%{$search}%")
-                  ->orWhere('specialite','like', "%{$search}%");
-            });
-        }
-
-        if ($request->filled('fonction')) {
-            $query->where('fonction', $request->fonction);
-        }
-
-        if ($request->filled('service_id')) {
-            $query->where('service_id', $request->service_id);
-        }
-
-        if ($request->filled('statut')) {
-            $query->where('statut', $request->statut);
-        }
-
-        $stats = [
-            'total'     => User::count(),
-            'actifs'    => User::where('statut', self::STATUT_ACTIF)->count(),
-            'inactifs'  => User::where('statut', self::STATUT_INACTIF)->count(),
-            'suspendus' => User::where('statut', self::STATUT_CONGE)->count(),   // adapter si besoin
-            'medecins'  => User::where('fonction', 'Médecin')->count(),
-        ];
-
-        $users    = $query->latest()->paginate(15)->withQueryString();
-        $services = Service::where('actif', true)->get();
-
-        return Inertia::render('admin/users', [
-            'users'    => $users,
-            'stats'    => $stats,
-            'filters'  => $request->only(['search', 'fonction', 'service_id', 'statut']),
-            'statuts'  => self::getStatuts(),
-            'fonctions'=> self::FONCTIONS,
-            'roles'    => self::ROLES,
-            'services' => $services,
-        ]);
-    }
-
-    /**
-     * Créer un utilisateur (admin peut créer n'importe quel rôle).
-     */
-    public function store(UserStoreRequest $request): RedirectResponse
-    {
-        $prefix = match ($request->fonction) {
-            'Médecin'                       => 'MED',
-            'Infirmière', 'Infirmière Chef' => 'INF',
-            'Sage-femme'                    => 'SF',
-            'Pharmacien(ne)'                => 'PHAR',
-            'Technicien(ne)'                => 'TECH',
-            default                         => 'ADM',
-        };
-
-        $lastUser  = User::where('matricule', 'like', $prefix . '-%')->orderBy('id', 'desc')->first();
-        $number    = $lastUser ? intval(substr($lastUser->matricule, -3)) + 1 : 1;
-        $matricule = $prefix . '-' . str_pad($number, 3, '0', STR_PAD_LEFT);
-
-        $data = $request->validated();
-
-        User::create([
-            ...$data,
-            'matricule' => $matricule,
-            'password'  => Hash::make($data['password'] ?? 'password123'),
-            'statut'    => $data['statut'] ?? self::STATUT_ACTIF,
-        ]);
-
-        return redirect()->route('admin.utilisateurs.index')
-            ->with('success', 'Utilisateur créé avec succès.');
-    }
-
-    /**
-     * Mettre à jour un utilisateur.
-     */
-    public function update(UserUpdateRequest $request, User $user): RedirectResponse
-    {
-        $data = $request->validated();
-
-        if (!empty($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
-        } else {
-            unset($data['password']);
-        }
-
-        $user->update($data);
-
-        return redirect()->route('admin.utilisateurs.index')
-            ->with('success', 'Utilisateur mis à jour avec succès.');
-    }
-
-    /**
-     * Changer uniquement le statut (PATCH).
-     */
-    public function updateStatut(Request $request, User $user): RedirectResponse
+    // ── Créer un utilisateur ──────────────────────────────────────────────────
+    public function store(Request $request)
     {
         $request->validate([
-            'statut' => ['required', 'in:' . implode(',', self::getStatuts())],
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'email', 'max:255'],
+            'password' => ['required', 'string', 'min:8'],
+            'role'     => ['required', 'in:user,admin'],
         ]);
 
-        $user->update(['statut' => $request->statut]);
-
-        return redirect()->route('admin.utilisateurs.index')
-            ->with('success', 'Statut mis à jour avec succès.');
-    }
-
-    /**
-     * Supprimer définitivement (admin uniquement).
-     */
-    public function destroy(User $user): RedirectResponse
-    {
-        // Empêcher la suppression de son propre compte
-        if ($user->id === auth()->id()) {
-            return redirect()->route('admin.utilisateurs.index')
-                ->with('error', 'Vous ne pouvez pas supprimer votre propre compte.');
+        // Vérifier si l'utilisateur existe déjà
+        if (User::where('email', $request->email)->exists()) {
+            return back()->withErrors([
+                'email' => 'Impossible de créer : un utilisateur avec cet email existe déjà.',
+            ])->withInput();
         }
 
+        $plainPassword = $request->password;
+
+        $user = User::create([
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'password' => Hash::make($plainPassword),
+            'role'     => $request->role,
+        ]);
+
+        $roleLabel = $user->role === 'admin' ? 'Administrateur' : 'Utilisateur';
+        $loginUrl  = url('/login');
+
+        $htmlContent = "
+<div style='font-family:Segoe UI,Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);'>
+  <div style='background:linear-gradient(135deg,#0f172a,#1e293b);padding:36px 40px;text-align:center;'>
+    <h1 style='color:#fff;font-size:22px;font-weight:700;margin:0 0 6px;'>🎉 Bienvenue sur STAT ENQUÊTE</h1>
+    <p style='color:rgba(255,255,255,.5);font-size:12px;margin:0;'>Votre compte a été créé par un administrateur</p>
+    <span style='display:inline-block;margin-top:12px;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(239,68,68,.2);color:#fca5a5;border:1px solid rgba(239,68,68,.3);'>{$roleLabel}</span>
+  </div>
+  <div style='padding:36px 40px;'>
+    <p style='font-size:17px;font-weight:600;color:#1e293b;margin:0 0 14px;'>Bonjour {$user->name} 👋</p>
+    <p style='font-size:14px;color:#475569;line-height:1.7;margin:0 0 28px;'>Un compte a été créé pour vous sur la plateforme <strong>STAT ENQUÊTE</strong>. Voici vos identifiants :</p>
+    <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px 24px;margin:0 0 24px;'>
+      <h3 style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin:0 0 16px;'>🔐 Vos identifiants</h3>
+      <div style='margin-bottom:12px;'><div style='font-size:11px;color:#94a3b8;margin-bottom:3px;'>Adresse email</div><div style='font-size:14px;font-weight:600;color:#1e293b;font-family:monospace;'>{$user->email}</div></div>
+      <div style='margin-bottom:12px;'><div style='font-size:11px;color:#94a3b8;margin-bottom:3px;'>Mot de passe temporaire</div><div style='font-size:16px;font-weight:700;color:#2563eb;background:#dbeafe;padding:6px 12px;border-radius:8px;display:inline-block;letter-spacing:.05em;'>{$plainPassword}</div></div>
+      <div><div style='font-size:11px;color:#94a3b8;margin-bottom:3px;'>Rôle</div><div style='font-size:14px;font-weight:600;color:#1e293b;'>{$roleLabel}</div></div>
+    </div>
+    <div style='background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;font-size:12px;color:#92400e;margin-bottom:24px;'>
+      ⚠️ <strong>Important :</strong> Veuillez changer votre mot de passe dès votre première connexion.
+    </div>
+    <div style='text-align:center;'>
+      <a href='{$loginUrl}' style='display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:14px 40px;border-radius:12px;font-size:15px;font-weight:700;'>Se connecter →</a>
+    </div>
+  </div>
+  <div style='background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;'>
+    <p style='font-size:11px;color:#94a3b8;margin:0;line-height:1.6;'>Cet email a été envoyé automatiquement par STAT ENQUÊTE.<br>© " . date('Y') . " STAT ENQUÊTE — Tous droits réservés.</p>
+  </div>
+</div>";
+
+        try {
+            Mail::to($user->email, $user->name)
+                ->send(new notifMail(
+                    subject: 'Bienvenue sur STAT ENQUÊTE — Vos identifiants',
+                    content: $htmlContent,
+                ));
+        } catch (\Exception $e) {
+            // L'utilisateur est créé même si l'email échoue
+        }
+
+        return back()->with('success', "Utilisateur {$user->name} créé et email envoyé à {$user->email}.");
+    }
+
+    // ── Liste des utilisateurs ────────────────────────────────────────────────
+    public function index(Request $request)
+    {
+        $query = User::withCount(['forms', 'forms as enquetes_actives_count' => fn ($q) =>
+                $q->where('is_published', true)->where('accepts_responses', true)
+            ])
+            ->withCount('forms');
+
+        if ($request->filled('search')) {
+            $query->where(fn ($q) =>
+                $q->where('name',  'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%')
+            );
+        }
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+        if ($request->filled('statut')) {
+            $query->where('is_blocked', $request->statut === 'bloque');
+        }
+
+        $users = $query->latest()->paginate(20)->through(fn ($u) => [
+            'id'           => $u->id,
+            'name'         => $u->name,
+            'email'        => $u->email,
+            'role'         => $u->role,
+            'is_blocked'   => $u->is_blocked ?? false,
+            'forms_count'  => $u->forms_count,
+            'created_at'   => $u->created_at->format('d/m/Y'),
+            'initials'     => mb_strtoupper(mb_substr($u->name, 0, 2)),
+        ]);
+
+        return Inertia::render('admin/users', [
+            'users'   => $users,
+            'filters' => $request->only(['search', 'role', 'statut']),
+        ]);
+    }
+
+    // ── Détail d'un utilisateur ───────────────────────────────────────────────
+    public function show(User $user)
+    {
+        $enquetes = Form::where('user_id', $user->id)
+            ->withCount('responses')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn ($f) => [
+                'id'             => $f->id,
+                'title'          => $f->title,
+                'color'          => $f->color,
+                'reference'      => $f->reference,
+                'statut'         => $f->is_published ? ($f->accepts_responses ? 'Active' : 'Fermée') : 'Brouillon',
+                'total_reponses' => $f->responses_count,
+                'created_at'     => $f->created_at->format('d/m/Y'),
+            ]);
+
+        $stats = [
+            'total_enquetes'  => $enquetes->count(),
+            'total_reponses'  => $enquetes->sum('total_reponses'),
+            'enquetes_actives'=> $enquetes->where('statut', 'Active')->count(),
+            'membre_depuis'   => $user->created_at->format('d/m/Y'),
+        ];
+
+        return Inertia::render('admin/usersShow', [
+            'user'     => [
+                'id'         => $user->id,
+                'name'       => $user->name,
+                'email'      => $user->email,
+                'role'       => $user->role,
+                'is_blocked' => $user->is_blocked ?? false,
+                'created_at' => $user->created_at->format('d/m/Y'),
+                'initials'   => mb_strtoupper(mb_substr($user->name, 0, 2)),
+            ],
+            'enquetes' => $enquetes,
+            'stats'    => $stats,
+        ]);
+    }
+
+    // ── Bloquer / débloquer ───────────────────────────────────────────────────
+    public function toggleBlock(User $user)
+    {
+        if ($user->role === 'admin') {
+            return back()->with('error', 'Impossible de bloquer un administrateur.');
+        }
+
+        $user->update(['is_blocked' => !($user->is_blocked ?? false)]);
+
+        $action = $user->is_blocked ? 'bloqué' : 'débloqué';
+        return back()->with('success', "Utilisateur {$user->name} {$action}.");
+    }
+
+    // ── Changer le rôle ───────────────────────────────────────────────────────
+    public function updateRole(Request $request, User $user)
+    {
+        $request->validate(['role' => ['required', 'in:user,admin']]);
+
+        $user->update(['role' => $request->role]);
+
+        return back()->with('success', "Rôle de {$user->name} mis à jour : {$request->role}.");
+    }
+
+    // ── Supprimer ─────────────────────────────────────────────────────────────
+    public function destroy(User $user)
+    {
+        if ($user->role === 'admin') {
+            return back()->with('error', 'Impossible de supprimer un administrateur.');
+        }
+
+        $name = $user->name;
         $user->delete();
 
-        return redirect()->route('admin.utilisateurs.index')
-            ->with('success', 'Utilisateur supprimé définitivement.');
+        return back()->with('success', "Utilisateur {$name} supprimé.");
     }
 }

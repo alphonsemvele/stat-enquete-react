@@ -3,23 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-
 class User extends Authenticatable
 {
-use HasFactory, Notifiable;
+    use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
         'name',
         'lastname',
@@ -34,55 +26,54 @@ use HasFactory, Notifiable;
         'service_id',
         'date_embauche',
         'statut',
+        'role',
+        'is_blocked',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
-            'id' => 'integer',
+            'id'                => 'integer',
             'email_verified_at' => 'timestamp',
-            'service_id' => 'integer',
-            'date_embauche' => 'date',
+            'service_id'        => 'integer',
+            'date_embauche'     => 'date',
+            'is_blocked'        => 'boolean',
         ];
     }
 
-    public function service(): BelongsTo
+    // ── Relations existantes ──────────────────────────────────────────────────
+   
+    
+
+    // ── Relations STAT ENQUÊTE ────────────────────────────────────────────────
+    public function forms(): HasMany
     {
-        return $this->belongsTo(Service::class);
+        return $this->hasMany(Form::class);
     }
 
-    public function consultations(): HasMany
+    public function contacts(): HasMany
     {
-        return $this->hasMany(Consultation::class);
+        return $this->hasMany(Contact::class);
     }
 
-    public function prescriptions(): HasMany
+    public function invitations(): HasMany
     {
-        return $this->hasMany(Prescription::class);
+        return $this->hasMany(Invitation::class);
     }
 
-    public function pointages(): HasMany
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    public function isAdmin(): bool
     {
-        return $this->hasMany(Pointage::class);
+        return $this->role === 'admin';
     }
 
-    public function demandeConges(): HasMany
+    public function isBlocked(): bool
     {
-        return $this->hasMany(DemandeConge::class);
+        return $this->is_blocked === true;
     }
 }

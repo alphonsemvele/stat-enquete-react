@@ -3,92 +3,82 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Role;
-use App\Models\Permission;
-use Illuminate\Http\RedirectResponse;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use Inertia\Response;
 
 class AdminRoleController extends Controller
 {
-    public function index(): Response
+    // ── Liste des rôles ───────────────────────────────────────────────────────
+    public function index(Request $request)
     {
-        $roles = Role::withCount('users')
-            ->with('permissions')
-            ->latest()
-            ->get();
+        $query = User::withCount('forms');
+
+        if ($request->filled('search')) {
+            $query->where(fn ($q) =>
+                $q->where('name',  'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%')
+            );
+        }
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+
+        $users = $query->latest()->paginate(20)->through(fn ($u) => [
+            'id'          => $u->id,
+            'name'        => $u->name,
+            'email'       => $u->email,
+            'role'        => $u->role,
+            'is_blocked'  => $u->is_blocked ?? false,
+            'forms_count' => $u->forms_count,
+            'created_at'  => $u->created_at->format('d/m/Y'),
+            'initials'    => mb_strtoupper(mb_substr($u->name, 0, 2)),
+        ]);
 
         $stats = [
-            'total'              => $roles->count(),
-            'avec_utilisateurs'  => $roles->where('users_count', '>', 0)->count(),
-            'total_permissions'  => Permission::count(),
+            'total'  => User::count(),
+            'admins' => User::where('role', 'admin')->count(),
+            'users'  => User::where('role', 'user')->count(),
         ];
 
-        return Inertia::render('admin/role', [
-            'roles'       => $roles,
-            'permissions' => Permission::orderBy('nom')->get(),
-            'stats'       => $stats,
+        return Inertia::render('admin/roles', [
+            'users'   => $users,
+            'stats'   => $stats,
+            'filters' => $request->only(['search', 'role']),
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    // ── Mettre à jour le rôle ─────────────────────────────────────────────────
+    public function update(Request $request, User $user)
     {
-        $data = $request->validate([
-            'nom'           => ['required', 'string', 'max:50', 'unique:roles,nom'],
-            'description'   => ['nullable', 'string', 'max:255'],
-            'couleur'       => ['nullable', 'string', 'max:7'],
-            'permissions'   => ['nullable', 'array'],
-            'permissions.*' => ['integer', 'exists:permissions,id'],
-        ]);
+        $request->validate(['role' => ['required', 'in:user,admin']]);
 
-        $role = Role::create([
-            'nom'         => strtolower(trim($data['nom'])),
-            'description' => $data['description'] ?? null,
-            'couleur'     => $data['couleur'] ?? '#8B5CF6',
-        ]);
-
-        if (!empty($data['permissions'])) {
-            $role->permissions()->sync($data['permissions']);
+        // Empêcher de se rétrograder soi-même
+        if ($user->id === Auth::id() && $request->role !== 'admin') {
+            return back()->with('error', 'Vous ne pouvez pas changer votre propre rôle.');
         }
 
-        return redirect()->route('admin.roles.index')
-            ->with('success', 'Role cree avec succes.');
+        $ancien = $user->role;
+        $user->update(['role' => $request->role]);
+
+        return back()->with('success', "{$user->name} : rôle changé de « {$ancien} » → « {$request->role} ».");
     }
 
-    public function update(Request $request, Role $role): RedirectResponse
+    // ── Promouvoir en admin (raccourci) ───────────────────────────────────────
+    public function promote(User $user)
     {
-        $data = $request->validate([
-            'nom'           => ['required', 'string', 'max:50', 'unique:roles,nom,' . $role->id],
-            'description'   => ['nullable', 'string', 'max:255'],
-            'couleur'       => ['nullable', 'string', 'max:7'],
-            'permissions'   => ['nullable', 'array'],
-            'permissions.*' => ['integer', 'exists:permissions,id'],
-        ]);
-
-        $role->update([
-            'nom'         => strtolower(trim($data['nom'])),
-            'description' => $data['description'] ?? null,
-            'couleur'     => $data['couleur'] ?? $role->couleur,
-        ]);
-
-        $role->permissions()->sync($data['permissions'] ?? []);
-
-        return redirect()->route('admin.roles.index')
-            ->with('success', 'Role mis a jour avec succes.');
+        $user->update(['role' => 'admin']);
+        return back()->with('success', "{$user->name} est maintenant administrateur.");
     }
 
-    public function destroy(Role $role): RedirectResponse
+    // ── Rétrograder en user (raccourci) ──────────────────────────────────────
+    public function demote(User $user)
     {
-        if ($role->users()->count() > 0) {
-            return redirect()->route('admin.roles.index')
-                ->with('error', 'Ce role est attribue a des utilisateurs. Veuillez les reassigner.');
+        if ($user->id === Auth::id()) {
+            return back()->with('error', 'Vous ne pouvez pas vous rétrograder vous-même.');
         }
-
-        $role->permissions()->detach();
-        $role->delete();
-
-        return redirect()->route('admin.roles.index')
-            ->with('success', 'Role supprime.');
+        $user->update(['role' => 'user']);
+        return back()->with('success', "{$user->name} est maintenant utilisateur.");
     }
 }
