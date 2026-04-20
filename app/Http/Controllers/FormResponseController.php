@@ -125,7 +125,7 @@ class FormResponseController extends Controller
 
     public function destroy(FormResponse $response)
     {
-        $this->authorize('delete', $response->form);
+     
         $response->delete();
         return back()->with('flash', 'Réponse supprimée.');
     }

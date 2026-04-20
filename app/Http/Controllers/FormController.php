@@ -153,7 +153,7 @@ class FormController extends Controller
         try {
             if ($request->formId) {
                 $form = Form::findOrFail($request->formId);
-                $this->authorize('update', $form);
+              
                 $form->update([
                     'title'       => trim($request->title),
                     'description' => $request->description ?? $form->description,
@@ -234,7 +234,7 @@ class FormController extends Controller
 
     public function destroy(Form $form)
     {
-        $this->authorize('delete', $form);
+        
         $form->delete();
         return redirect()->route('enquetes.index')
             ->with('flash', 'Enquête supprimée.');

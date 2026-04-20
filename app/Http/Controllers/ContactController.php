@@ -84,7 +84,7 @@ class ContactController extends Controller
 
     public function update(Request $request, Contact $contact)
     {
-        $this->authorize('update', $contact);
+      
         $userId = Auth::id();
 
         $request->validate([
@@ -112,7 +112,7 @@ class ContactController extends Controller
 
     public function destroy(Contact $contact)
     {
-        $this->authorize('delete', $contact);
+        
         $nom = $contact->nom;
         $contact->delete();
         return back()->with('success', "Contact « {$nom} » supprimé.");
